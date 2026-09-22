@@ -1,20 +1,20 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 export default function LoginPage({ onLogin }) {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('demo@demo.com')
-  const [password, setPassword] = useState('123456')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      const response = await axios.post(`${API_URL}/login/?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`)
-      localStorage.setItem('demoToken', response.data.token)
+      const response = await axios.post(`${API_URL}/login/`, { email, password })
+      localStorage.setItem('authToken', response.data.token)
       localStorage.setItem('userId', response.data.user_id)
       onLogin()
       navigate('/hoy')
@@ -38,6 +38,10 @@ export default function LoginPage({ onLogin }) {
         {error && <div style={{ color: '#a43434', background: '#ffe3e3', borderRadius: 8, padding: '0.75rem' }}>{error}</div>}
         <button type="submit" style={{ background: '#1d7a5f', color: '#fff', border: 'none', borderRadius: 10, padding: '0.8rem 1rem', fontWeight: 700 }}>Iniciar sesión</button>
       </form>
+      <p style={{ marginBottom: 0, textAlign: 'center', color: '#586464' }}>
+        ¿No tienes cuenta?{' '}
+        <Link to="/registro" style={{ color: '#1d7a5f', fontWeight: 700 }}>Regístrate</Link>
+      </p>
     </main>
   )
 }

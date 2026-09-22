@@ -74,7 +74,7 @@ export default function CrearEvento() {
         ...evento,
         name: evento.name.trim(),
         event_type: evento.event_type.trim(),
-        user_id: 'usuario-demo-sprint-1',
+        user_id: localStorage.getItem('userId'),
       }
 
       const respuestaEvento = await axios.post(`${API_URL}/eventos/`, eventoPayload)
