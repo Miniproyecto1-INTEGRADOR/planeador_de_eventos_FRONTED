@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import { getApiErrorMessage } from '../utils/apiError.js'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
@@ -19,7 +20,7 @@ export default function LoginPage({ onLogin }) {
       onLogin()
       navigate('/hoy')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Credenciales inválidas.')
+      setError(getApiErrorMessage(err, 'Credenciales inválidas.'))
     }
   }
 

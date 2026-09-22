@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import { getApiErrorMessage } from '../utils/apiError.js'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 const fieldStyle = { width: '100%', padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6', boxSizing: 'border-box' }
@@ -40,7 +41,7 @@ export default function RegistroPage({ onLogin }) {
       onLogin()
       navigate('/hoy')
     } catch (err) {
-      setError(err.response?.data?.detail || 'No se pudo crear la cuenta. Inténtalo de nuevo.')
+      setError(getApiErrorMessage(err, 'No se pudo crear la cuenta. Inténtalo de nuevo.'))
     } finally {
       setSaving(false)
     }
