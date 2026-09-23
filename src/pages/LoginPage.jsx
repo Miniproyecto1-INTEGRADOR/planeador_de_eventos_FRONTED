@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { getApiErrorMessage } from '../utils/apiError.js'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+import { API_URL } from '../utils/apiUrl.js'
 
 export default function LoginPage({ onLogin }) {
   const navigate = useNavigate()
