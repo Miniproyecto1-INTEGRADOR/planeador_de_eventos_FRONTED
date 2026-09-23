@@ -37,12 +37,20 @@ function App() {
     setIsAuthenticated(true)
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('userId')
+    sessionStorage.removeItem('selectedEventId')
+    delete axios.defaults.headers.common.Authorization
+    setIsAuthenticated(false)
+  }
+
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
         <Route path="/registro" element={<RegistroPage onLogin={handleLogin} />} />
-        <Route path="/hoy" element={<ProtectedRoute isAuthenticated={isAuthenticated}><HoyPage /></ProtectedRoute>} />
+        <Route path="/hoy" element={<ProtectedRoute isAuthenticated={isAuthenticated}><HoyPage onLogout={handleLogout} /></ProtectedRoute>} />
         <Route path="/crear" element={<ProtectedRoute isAuthenticated={isAuthenticated}><CrearEvento /></ProtectedRoute>} />
         <Route path="/evento/subtareas" element={<ProtectedRoute isAuthenticated={isAuthenticated}><DetalleEvento /></ProtectedRoute>} />
         <Route path="/evento/:id" element={<ProtectedRoute isAuthenticated={isAuthenticated}><DetalleEvento /></ProtectedRoute>} />

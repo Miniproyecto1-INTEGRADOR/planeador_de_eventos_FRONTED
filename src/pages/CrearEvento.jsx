@@ -1,19 +1,37 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
 
 const valoresIniciales = {
   name: '',
-  event_type: 'Boda',
+  event_type: 'Bodas',
   event_date: '',
   color: '#FF6B6B',
 }
 
 const subtareaBase = [
   { title: '', target_date: '', estimated_minutes: '' },
-  { title: '', target_date: '', estimated_minutes: '' },
-  { title: '', target_date: '', estimated_minutes: '' },
+]
+
+const tiposEvento = [
+  'Bodas',
+  'XV años',
+  'Bautizos',
+  'Primeras comuniones',
+  'Confirmaciones',
+  'Baby showers',
+  'Cumpleaños y fiestas infantiles',
+  'Aniversarios de bodas',
+  'Despedidas de soltero(a)',
+  'Graduaciones',
+  'Comidas o cenas familiares',
+  'Fiestas de revelación de género',
+  'Renovación de votos',
+  'Fiestas de jubilación',
+  'Cumpleaños',
+  'Corporativo',
+  'Conferencia',
 ]
 
 export default function CrearEvento() {
@@ -23,6 +41,8 @@ export default function CrearEvento() {
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [error, setError] = useState('')
+  const [tiposAbierto, setTiposAbierto] = useState(false)
+  const tiposRef = useRef(null)
 
   const tieneCambios = Boolean(
     evento.name.trim() ||
@@ -41,6 +61,17 @@ export default function CrearEvento() {
     window.addEventListener('beforeunload', confirmarSalida)
     return () => window.removeEventListener('beforeunload', confirmarSalida)
   }, [tieneCambios, cargando])
+
+  useEffect(() => {
+    if (!tiposAbierto) return undefined
+
+    const cerrarTiposAlHacerClickFuera = (event) => {
+      if (!tiposRef.current?.contains(event.target)) setTiposAbierto(false)
+    }
+
+    document.addEventListener('mousedown', cerrarTiposAlHacerClickFuera)
+    return () => document.removeEventListener('mousedown', cerrarTiposAlHacerClickFuera)
+  }, [tiposAbierto])
 
   const volverAtras = () => {
     if (tieneCambios && !window.confirm('Tienes datos sin guardar. ¿Deseas salir sin crear el evento?')) return
@@ -65,6 +96,14 @@ export default function CrearEvento() {
     )
   }
 
+  const agregarSubtarea = () => {
+    setSubtareas((actuales) => [...actuales, { title: '', target_date: '', estimated_minutes: '' }])
+  }
+
+  const eliminarSubtarea = (index) => {
+    setSubtareas((actuales) => actuales.filter((_, pos) => pos !== index))
+  }
+
   const guardarEvento = async () => {
     setError('')
     setMensaje('')
@@ -82,12 +121,19 @@ export default function CrearEvento() {
       return
     }
 
-    const subtareasValidas = subtareas.every(
+    const subtareasConContenido = subtareas.filter(
+      (item) => item.title.trim() || item.target_date || item.estimated_minutes,
+    )
+    const subtareasValidas = subtareasConContenido.filter(
       (item) => item.title.trim() && Number(item.estimated_minutes) > 0,
     )
 
-    if (!subtareasValidas) {
-      setError('Cada gestión logística necesita título y horas estimadas mayores que 0.')
+    if (!subtareasConContenido.length) {
+      setError('Añade al menos una gestión con título y tiempo estimado.')
+      return
+    }
+    if (subtareasValidas.length !== subtareasConContenido.length) {
+      setError('Completa el título y el tiempo estimado de cada gestión que hayas comenzado.')
       return
     }
 
@@ -99,7 +145,7 @@ export default function CrearEvento() {
         name: evento.name.trim(),
         event_type: evento.event_type.trim(),
         user_id: localStorage.getItem('userId'),
-        subtasks: subtareas.map((tarea) => ({
+        subtasks: subtareasValidas.map((tarea) => ({
           title: tarea.title.trim(),
           description: `Gestión logística para ${evento.name.trim()}`,
           target_date: tarea.target_date || evento.event_date.split('T')[0],
@@ -184,21 +230,38 @@ return (
         <div className="crear-campo">
           <label htmlFor="event_type">Tipo de evento</label>
 
-          <select
-            id="event_type"
-            value={evento.event_type}
-            onChange={(event) =>
-              setEvento((actual) => ({
-                ...actual,
-                event_type: event.target.value,
-              }))
-            }
-          >
-            <option value="Boda">Boda</option>
-            <option value="Cumpleaños">Cumpleaños</option>
-            <option value="Corporativo">Corporativo</option>
-            <option value="Conferencia">Conferencia</option>
-          </select>
+          <div className="selector-evento" ref={tiposRef}>
+            <button
+              type="button"
+              className="selector-evento-boton"
+              aria-haspopup="listbox"
+              aria-expanded={tiposAbierto}
+              onClick={() => setTiposAbierto((abierto) => !abierto)}
+            >
+              <span>{evento.event_type}</span>
+              <span aria-hidden="true">⌄</span>
+            </button>
+
+            {tiposAbierto && (
+              <div className="selector-evento-opciones" role="listbox" aria-label="Tipos de evento">
+                {tiposEvento.map((tipo) => (
+                  <button
+                    key={tipo}
+                    type="button"
+                    role="option"
+                    aria-selected={evento.event_type === tipo}
+                    className={evento.event_type === tipo ? 'selector-evento-opcion seleccionada' : 'selector-evento-opcion'}
+                    onClick={() => {
+                      setEvento((actual) => ({ ...actual, event_type: tipo }))
+                      setTiposAbierto(false)
+                    }}
+                  >
+                    {tipo}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="crear-campo">
@@ -255,9 +318,7 @@ return (
         <div className="crear-plan-header">
           <div>
             <h3>Agregar gestión</h3>
-            <p>
-              Cada tarea debe tener una fecha límite y tiempo estimado.
-            </p>
+            <p>Añade una o varias gestiones. Solo se enviarán las filas completas.</p>
           </div>
 
           <span className="crear-plan-count">
@@ -327,8 +388,23 @@ return (
                 }
               />
             </div>
+
+            {subtareas.length > 1 && (
+              <button
+                type="button"
+                className="crear-quitar-subtarea"
+                onClick={() => eliminarSubtarea(index)}
+                disabled={cargando}
+              >
+                Quitar
+              </button>
+            )}
           </div>
         ))}
+
+        <button type="button" className="crear-agregar-subtarea" onClick={agregarSubtarea} disabled={cargando}>
+          + Agregar otra gestión
+        </button>
       </div>
     </section>
 

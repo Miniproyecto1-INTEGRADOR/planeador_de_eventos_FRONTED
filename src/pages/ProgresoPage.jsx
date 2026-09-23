@@ -35,7 +35,7 @@ export default function ProgresoPage() {
         }),
       )
       setEventos(eventosConProgreso)
-    } catch (err) {
+    } catch {
       setError('No se pudo cargar el progreso.')
     } finally {
       setLoading(false)
@@ -53,14 +53,23 @@ export default function ProgresoPage() {
         <h1 style={{ margin: '0.4rem 0 0' }}>Avance por evento</h1>
       </header>
 
-      {error && <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c' }}>{error}</div>}
+      {error && (
+        <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c' }} role="alert">
+          <p>{error}</p>
+          <button type="button" onClick={cargarDatos}>Intentar de nuevo</button>
+        </div>
+      )}
 
       {loading ? (
-        <div style={cardStyle}>Cargando progreso...</div>
+        <div style={cardStyle} className="state-loading" role="status">Estamos calculando el avance de tus eventos...</div>
       ) : (
         <div style={{ display: 'grid', gap: '1rem' }}>
           {eventos.length === 0 ? (
-            <div style={cardStyle}>Todavía no hay eventos creados.</div>
+            <div style={cardStyle} className="state-empty-block">
+              <strong>Aún no tienes eventos para medir</strong>
+              <p>Crea un evento y verás aquí cuánto has avanzado en cada gestión.</p>
+              <Link to="/crear" className="state-action">Crear evento</Link>
+            </div>
           ) : (
             eventos.map((evento) => (
               <div key={evento.id} style={cardStyle}>
@@ -71,11 +80,17 @@ export default function ProgresoPage() {
                   </div>
                   <Link to="/evento/subtareas" onClick={() => sessionStorage.setItem('selectedEventId', evento.id)} style={{ color: '#0d5c3f', fontWeight: 700, textDecoration: 'none' }}>Ver detalle</Link>
                 </div>
-                <div style={{ marginTop: '1rem', color: '#4c5a5a' }}>
-                  {evento.progreso.done} de {evento.progreso.total} tarea(s) completadas · {evento.progreso.percent}%
+                <div className="progreso-evento">
+                  <div className="progreso-circulo" style={{ '--progreso-grados': `${evento.progreso.percent * 3.6}deg` }} role="img" aria-label={`${evento.progreso.percent}% completado`}>
+                    <strong>{evento.progreso.percent}%</strong>
+                  </div>
+                  <div className="progreso-detalle">
+                    <strong>{evento.progreso.done} de {evento.progreso.total} gestiones completadas</strong>
+                    <span>{evento.progreso.total === 0 ? 'Añade gestiones para comenzar el seguimiento.' : 'Cada cambio se refleja aquí automáticamente.'}</span>
+                  </div>
                 </div>
-                <div style={{ height: 12, borderRadius: 999, background: '#edf1f0', marginTop: '0.75rem', overflow: 'hidden' }}>
-                  <div style={{ width: `${evento.progreso.percent}%`, height: '100%', background: '#1d7a5f' }} />
+                <div className="progreso-barra" aria-hidden="true">
+                  <div style={{ width: `${evento.progreso.percent}%` }} />
                 </div>
               </div>
             ))

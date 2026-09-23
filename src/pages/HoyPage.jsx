@@ -26,7 +26,7 @@ const baseButton = {
   cursor: 'pointer',
 }
 
-export default function HoyPage() {
+export default function HoyPage({ onLogout }) {
   const navigate = useNavigate()
   const [data, setData] = useState({ vencidas: [], hoy: [], proximas: [] })
   const [nombresEventos, setNombresEventos] = useState({})
@@ -50,14 +50,17 @@ export default function HoyPage() {
         idsEventos.map(async (eventId) => {
           try {
             const eventoRespuesta = await axios.get(`${API_URL}/eventos/${eventId}/`)
-            return [eventId, eventoRespuesta.data.name]
-          } catch (err) {
-            return [eventId, 'Evento']
+            return [eventId, {
+              name: eventoRespuesta.data.name,
+              color: eventoRespuesta.data.color || '#1d7a5f',
+            }]
+          } catch {
+            return [eventId, { name: 'Evento', color: '#1d7a5f' }]
           }
         }),
       )
       setNombresEventos(Object.fromEntries(nombresRespuesta))
-    } catch (err) {
+    } catch {
       setError('No pudimos cargar tus tareas de hoy.')
     } finally {
       setLoading(false)
@@ -72,10 +75,13 @@ export default function HoyPage() {
     <div style={cardStyle}>
       <h2 style={{ marginBottom: '1rem' }}>{titulo}</h2>
       {items.length === 0 ? (
-        <p style={{ margin: 0, color: '#586464' }}>No hay tareas en este bloque.</p>
+        <p className="state-empty">No hay gestiones en este bloque. Tu agenda está despejada por ahora.</p>
       ) : (
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {items.map((item) => (
+            (() => {
+              const eventoInfo = nombresEventos[item.event_id] || { name: 'Evento', color: '#1d7a5f' }
+              return (
             <div
               key={item.id}
               style={{
@@ -84,12 +90,13 @@ export default function HoyPage() {
                 gap: '1rem',
                 alignItems: 'center',
                 border: '1px solid #e7ecec',
+                borderLeft: `5px solid ${eventoInfo.color}`,
                 borderRadius: 12,
                 padding: '0.8rem 1rem',
               }}
             >
               <div>
-                <strong>{item.event_name || item.event?.name || item.event_title || nombresEventos[item.event_id] || 'Evento'}</strong>
+                <strong>{item.event_name || item.event?.name || item.event_title || eventoInfo.name}</strong>
                 <div style={{ color: '#586464', fontSize: '0.9rem', marginTop: 4 }}>
                   Tarea: {item.title} · {item.target_date || 'Sin fecha'} · {item.estimated_minutes} min
                 </div>
@@ -102,6 +109,8 @@ export default function HoyPage() {
                 Ver detalle
               </Link>
             </div>
+              )
+            })()
           ))}
         </div>
       )}
@@ -139,6 +148,13 @@ export default function HoyPage() {
           >
             Crear evento
           </Link>
+          <button
+            type="button"
+            onClick={onLogout}
+            style={{ ...baseButton, background: '#ffe5e1', color: '#9b2a24' }}
+          >
+            Cerrar sesión
+          </button>
         </div>
       </header>
 
@@ -147,7 +163,7 @@ export default function HoyPage() {
       </div>
 
       {error && (
-        <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c' }}>
+        <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c' }} role="alert">
           {error}
           <button onClick={cargarDatos} style={{ ...baseButton, background: '#f3d5d2', marginLeft: '1rem' }}>
             Reintentar
@@ -156,9 +172,16 @@ export default function HoyPage() {
       )}
 
       {loading ? (
-        <div style={cardStyle}>Cargando tareas...</div>
+        <div style={cardStyle} className="state-loading" role="status">Estamos ordenando tus gestiones...</div>
       ) : (
         <>
+          {data.vencidas.length + data.hoy.length + data.proximas.length === 0 && (
+            <div style={{ ...cardStyle, background: '#edfaf3', borderLeft: '4px solid #1d7a5f' }} className="state-empty-block">
+              <strong>Tu plan comienza aquí</strong>
+              <p>No tienes gestiones pendientes todavía. Crea tu primer evento y organiza los próximos pasos.</p>
+              <Link to="/crear" style={{ ...baseButton, background: '#1d7a5f', color: '#fff', textDecoration: 'none' }}>Crear mi primer evento</Link>
+            </div>
+          )}
           {renderLista('Vencidas', data.vencidas)}
           {renderLista('Para hoy', data.hoy)}
           {renderLista('Próximas', data.proximas)}
