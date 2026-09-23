@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
@@ -28,7 +28,9 @@ const baseButton = {
 }
 
 export default function DetalleEvento() {
-  const { id } = useParams()
+  const { id: routeId } = useParams()
+  const id = routeId || sessionStorage.getItem('selectedEventId')
+  const navigate = useNavigate() // Inicializamos la función para volver atrás
   const [evento, setEvento] = useState(null)
   const [subtareas, setSubtareas] = useState([])
   const [titulo, setTitulo] = useState('')
@@ -126,7 +128,13 @@ export default function DetalleEvento() {
           <h1 style={{ margin: '0.35rem 0 0' }}>{evento.name}</h1>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+
+          {/* Botón para volver atrás en el historial (añadido) */}
+          <button onClick={() => navigate(-1)} style={{ ...baseButton, background: '#edf2f3', color: '#243434' }}>Atrás</button>
+
+          {/* Enlace original que dirige a /hoy (mantenido) */}
           <Link to="/hoy" style={{ ...baseButton, background: '#edf2f3', color: '#243434', textDecoration: 'none' }}>Volver</Link>
+
           <button onClick={eliminarEvento} style={{ ...baseButton, background: '#ffe5e1', color: '#9b2a24' }}>Eliminar evento</button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
@@ -28,7 +28,9 @@ const baseButton = {
 }
 
 export default function HoyPage() {
+  const navigate = useNavigate()
   const [data, setData] = useState({ vencidas: [], hoy: [], proximas: [] })
+  const [nombresEventos, setNombresEventos] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -38,6 +40,24 @@ export default function HoyPage() {
     try {
       const respuesta = await axios.get(`${API_URL}/hoy/`)
       setData(respuesta.data)
+
+      const tareas = [
+        ...(respuesta.data.vencidas || []),
+        ...(respuesta.data.hoy || []),
+        ...(respuesta.data.proximas || []),
+      ]
+      const idsEventos = [...new Set(tareas.map((item) => item.event_id).filter(Boolean))]
+      const nombresRespuesta = await Promise.all(
+        idsEventos.map(async (eventId) => {
+          try {
+            const eventoRespuesta = await axios.get(`${API_URL}/eventos/${eventId}/`)
+            return [eventId, eventoRespuesta.data.name]
+          } catch (err) {
+            return [eventId, 'Evento']
+          }
+        }),
+      )
+      setNombresEventos(Object.fromEntries(nombresRespuesta))
     } catch (err) {
       setError('No pudimos cargar tus tareas de hoy.')
     } finally {
@@ -70,13 +90,14 @@ export default function HoyPage() {
               }}
             >
               <div>
-                <strong>{item.title}</strong>
+                <strong>{item.event_name || item.event?.name || item.event_title || nombresEventos[item.event_id] || 'Evento'}</strong>
                 <div style={{ color: '#586464', fontSize: '0.9rem', marginTop: 4 }}>
-                  {item.target_date || 'Sin fecha'} · {item.estimated_minutes} min
+                  Tarea: {item.title} · {item.target_date || 'Sin fecha'} · {item.estimated_minutes} min
                 </div>
               </div>
               <Link
-                to={`/evento/${item.event_id}`}
+                to="/evento/subtareas"
+                onClick={() => sessionStorage.setItem('selectedEventId', item.event_id)}
                 style={{ ...baseButton, background: '#eaf8f1', color: '#0d5c3f', textDecoration: 'none' }}
               >
                 Ver detalle
@@ -106,12 +127,20 @@ export default function HoyPage() {
           </p>
           <h1 style={{ margin: '0.4rem 0 0' }}>Tu plan del día</h1>
         </div>
-        <Link
-          to="/crear"
-          style={{ ...baseButton, background: '#1d7a5f', color: '#fff', textDecoration: 'none' }}
-        >
-          Crear evento
-        </Link>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{ ...baseButton, background: '#edf2f3', color: '#243434' }}
+          >
+            Atrás
+          </button>
+          <Link
+            to="/crear"
+            style={{ ...baseButton, background: '#1d7a5f', color: '#fff', textDecoration: 'none' }}
+          >
+            Crear evento
+          </Link>
+        </div>
       </header>
 
       <div style={{ ...cardStyle, background: '#edfaf3', borderLeft: '4px solid #1d7a5f' }}>

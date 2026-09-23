@@ -70,7 +70,7 @@ export default function ProgresoPage() {
                     <h2 style={{ margin: 0 }}>{evento.name}</h2>
                     <div style={{ color: '#586464' }}>{evento.event_type}</div>
                   </div>
-                  <Link to={`/evento/${evento.id}`} style={{ color: '#0d5c3f', fontWeight: 700, textDecoration: 'none' }}>Ver detalle</Link>
+                  <Link to="/evento/subtareas" onClick={() => sessionStorage.setItem('selectedEventId', evento.id)} style={{ color: '#0d5c3f', fontWeight: 700, textDecoration: 'none' }}>Ver detalle</Link>
                 </div>
                 <div style={{ marginTop: '1rem', color: '#4c5a5a' }}>
                   {evento.progreso.done} de {evento.progreso.total} tarea(s) completadas · {evento.progreso.percent}%

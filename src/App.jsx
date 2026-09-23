@@ -44,6 +44,7 @@ function App() {
         <Route path="/registro" element={<RegistroPage onLogin={handleLogin} />} />
         <Route path="/hoy" element={<ProtectedRoute isAuthenticated={isAuthenticated}><HoyPage /></ProtectedRoute>} />
         <Route path="/crear" element={<ProtectedRoute isAuthenticated={isAuthenticated}><CrearEvento /></ProtectedRoute>} />
+        <Route path="/evento/subtareas" element={<ProtectedRoute isAuthenticated={isAuthenticated}><DetalleEvento /></ProtectedRoute>} />
         <Route path="/evento/:id" element={<ProtectedRoute isAuthenticated={isAuthenticated}><DetalleEvento /></ProtectedRoute>} />
         <Route path="/progreso" element={<ProtectedRoute isAuthenticated={isAuthenticated}><ProgresoPage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to={isAuthenticated ? '/hoy' : '/login'} replace />} />

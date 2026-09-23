@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
@@ -11,17 +12,41 @@ const valoresIniciales = {
 }
 
 const subtareaBase = [
-  { title: 'Reservar salón', target_date: '2026-09-25', estimated_minutes: 90 },
-  { title: 'Enviar invitaciones', target_date: '2026-09-27', estimated_minutes: 45 },
-  { title: 'Confirmar catering', target_date: '2026-09-30', estimated_minutes: 60 },
+  { title: '', target_date: '', estimated_minutes: '' },
+  { title: '', target_date: '', estimated_minutes: '' },
+  { title: '', target_date: '', estimated_minutes: '' },
 ]
 
 export default function CrearEvento() {
+  const navigate = useNavigate()
   const [evento, setEvento] = useState(valoresIniciales)
   const [subtareas, setSubtareas] = useState(subtareaBase)
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [error, setError] = useState('')
+
+  const tieneCambios = Boolean(
+    evento.name.trim() ||
+    evento.event_date ||
+    evento.color !== valoresIniciales.color ||
+    subtareas.some((tarea) => tarea.title.trim() || tarea.target_date || tarea.estimated_minutes),
+  )
+
+  useEffect(() => {
+    const confirmarSalida = (event) => {
+      if (!tieneCambios || cargando) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    window.addEventListener('beforeunload', confirmarSalida)
+    return () => window.removeEventListener('beforeunload', confirmarSalida)
+  }, [tieneCambios, cargando])
+
+  const volverAtras = () => {
+    if (tieneCambios && !window.confirm('Tienes datos sin guardar. ¿Deseas salir sin crear el evento?')) return
+    navigate(-1)
+  }
 
   const totalTiempo = useMemo(
     () => subtareas.reduce((total, item) => total + Number(item.estimated_minutes || 0), 0),
@@ -34,7 +59,7 @@ export default function CrearEvento() {
         pos === index
           ? {
               ...tarea,
-              [campo]: campo === 'estimated_minutes' ? Number(valor) : valor,
+              [campo]: campo === 'estimated_minutes' ? (valor === '' ? '' : Number(valor)) : valor,
             }
           : tarea,
       ),
@@ -94,9 +119,13 @@ export default function CrearEvento() {
         ),
       )
 
-      setMensaje('Evento y gestiones logísticas creados correctamente.')
-      setEvento(valoresIniciales)
-      setSubtareas(subtareaBase)
+     setMensaje('Evento y gestiones logísticas creados correctamente.')
+
+     setTimeout(() => {
+    sessionStorage.setItem('selectedEventId', eventoCreado.id)
+    navigate('/evento/subtareas')
+     }, 500)
+
     } catch (err) {
       const mensajeError = err.response?.data?.detail || 'No se pudo crear el evento.'
       setError(mensajeError)
@@ -105,112 +134,247 @@ export default function CrearEvento() {
     }
   }
 
-  return (
-    <main className="panel sprint1-layout">
-      <header className="encabezado">
+return (
+  <main className="panel crear-panel">
+    <header className="encabezado">
+      <div>
+        <p className="eyebrow">Ritmo consciente · Planificación</p>
+        <h1>Crear nuevo evento</h1>
+        <p className="subtitulo">
+          Organiza la información principal y prepara las primeras gestiones de tu evento.
+        </p>
+      </div>
+
+      <div className="metricas">
+        <span>{subtareas.length} tareas</span>
+        <span>{totalTiempo} min estimados</span>
+      </div>
+    </header>
+
+    {mensaje && (
+      <p className="aviso crear-mensaje" role="status">
+        {mensaje}
+      </p>
+    )}
+
+    {error && (
+      <p className="aviso error crear-mensaje crear-error" role="alert">
+        {error}
+      </p>
+    )}
+
+    <section className="crear-seccion">
+      <div className="crear-seccion-header">
+        <span className="crear-numero">01</span>
+
         <div>
-          <p className="eyebrow">Sprint 1 · Crear evento</p>
-          <h1>Nuevo evento</h1>
-          <p className="subtitulo">Crea el evento y sus gestiones logísticas para no perder tiempo operativo.</p>
+          <h2>Información del evento</h2>
+          <p>Define los datos principales para comenzar la planificación.</p>
         </div>
-        <div className="metricas">
-          <span>{subtareas.length} gestiones</span>
-          <span>{totalTiempo} min estimados</span>
-        </div>
-      </header>
+      </div>
 
-      {mensaje && <p className="aviso success" role="status">{mensaje}</p>}
-      {error && <p className="aviso error" role="alert">{error}</p>}
-
-      <section className="form-card">
-        <div className="fieldset">
+      <div className="crear-form-grid">
+        <div className="crear-campo campo-nombre">
           <label htmlFor="name">Nombre del evento</label>
           <input
             id="name"
             value={evento.name}
-            onChange={(event) => setEvento((actual) => ({ ...actual, name: event.target.value }))}
-            placeholder="Boda María y Juan"
+            onChange={(event) =>
+              setEvento((actual) => ({
+                ...actual,
+                name: event.target.value,
+              }))
+            }
+            placeholder="Ej. Boda María & Juan"
           />
         </div>
 
-        <div className="grid two-cols">
-          <div className="fieldset">
-            <label htmlFor="event_type">Tipo de evento</label>
-            <select
-              id="event_type"
-              value={evento.event_type}
-              onChange={(event) => setEvento((actual) => ({ ...actual, event_type: event.target.value }))}
-            >
-              <option value="Boda">Boda</option>
-              <option value="Cumpleaños">Cumpleaños</option>
-              <option value="Corporativo">Corporativo</option>
-              <option value="Conferencia">Conferencia</option>
-            </select>
-          </div>
+        <div className="crear-campo">
+          <label htmlFor="event_type">Tipo de evento</label>
 
-          <div className="fieldset">
-            <label htmlFor="event_date">Fecha del evento</label>
-            <input
-              id="event_date"
-              type="datetime-local"
-              value={evento.event_date}
-              onChange={(event) => setEvento((actual) => ({ ...actual, event_date: event.target.value }))}
-            />
-          </div>
+          <select
+            id="event_type"
+            value={evento.event_type}
+            onChange={(event) =>
+              setEvento((actual) => ({
+                ...actual,
+                event_type: event.target.value,
+              }))
+            }
+          >
+            <option value="Boda">Boda</option>
+            <option value="Cumpleaños">Cumpleaños</option>
+            <option value="Corporativo">Corporativo</option>
+            <option value="Conferencia">Conferencia</option>
+          </select>
         </div>
 
-        <div className="fieldset">
-          <label htmlFor="color">Color</label>
+        <div className="crear-campo">
+          <label htmlFor="event_date">Fecha del evento</label>
+
           <input
-            id="color"
-            type="color"
-            value={evento.color}
-            onChange={(event) => setEvento((actual) => ({ ...actual, color: event.target.value }))}
+            id="event_date"
+            type="datetime-local"
+            value={evento.event_date}
+            onChange={(event) =>
+              setEvento((actual) => ({
+                ...actual,
+                event_date: event.target.value,
+              }))
+            }
           />
         </div>
 
-        <div className="subtasks-box">
-          <div className="section-title-row">
-            <h2>Gestiones logísticas</h2>
-            <span>{subtareas.length} tareas</span>
+        <div className="crear-campo">
+          <label htmlFor="color">Color identificador</label>
+
+          <div className="crear-color">
+            <input
+              id="color"
+              type="color"
+              value={evento.color}
+              onChange={(event) =>
+                setEvento((actual) => ({
+                  ...actual,
+                  color: event.target.value,
+                }))
+              }
+            />
+
+            <span>{evento.color}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section className="crear-seccion">
+      <div className="crear-seccion-header">
+        <span className="crear-numero">02</span>
+
+        <div>
+          <h2>Plan logístico inicial</h2>
+          <p>
+            Divide el evento en gestiones pequeñas y establece sus tiempos estimados.
+          </p>
+        </div>
+      </div>
+
+      <div className="crear-plan">
+        <div className="crear-plan-header">
+          <div>
+            <h3>Agregar gestión</h3>
+            <p>
+              Cada tarea debe tener una fecha límite y tiempo estimado.
+            </p>
           </div>
 
-          {subtareas.map((tarea, index) => (
-            <div key={`${tarea.title}-${index}`} className="subtask-row">
-              <div className="fieldset">
-                <label>Título</label>
-                <input
-                  value={tarea.title}
-                  onChange={(event) => actualizarSubtarea(index, 'title', event.target.value)}
-                />
-              </div>
-
-              <div className="fieldset">
-                <label>Fecha objetivo</label>
-                <input
-                  type="date"
-                  value={tarea.target_date}
-                  onChange={(event) => actualizarSubtarea(index, 'target_date', event.target.value)}
-                />
-              </div>
-
-              <div className="fieldset small-field">
-                <label>Minutos</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={tarea.estimated_minutes}
-                  onChange={(event) => actualizarSubtarea(index, 'estimated_minutes', event.target.value)}
-                />
-              </div>
-            </div>
-          ))}
+          <span className="crear-plan-count">
+            {subtareas.length} agregadas
+          </span>
         </div>
 
-        <button className="primary-button" type="button" onClick={guardarEvento} disabled={cargando}>
-          {cargando ? 'Guardando...' : 'Crear evento'}
+        {subtareas.map((tarea, index) => (
+          <div
+            key={index}
+            className="crear-subtarea"
+          >
+            <div className="crear-campo">
+              <label htmlFor={`titulo-${index}`}>
+                Gestión o tarea
+              </label>
+
+              <input
+                id={`titulo-${index}`}
+                value={tarea.title}
+                onChange={(event) =>
+                  actualizarSubtarea(
+                    index,
+                    'title',
+                    event.target.value,
+                  )
+                }
+                placeholder="Ej. Confirmar proveedor de catering"
+              />
+            </div>
+
+            <div className="crear-campo">
+              <label htmlFor={`fecha-${index}`}>
+                Fecha límite
+              </label>
+
+              <input
+                id={`fecha-${index}`}
+                type="date"
+                value={tarea.target_date}
+                onChange={(event) =>
+                  actualizarSubtarea(
+                    index,
+                    'target_date',
+                    event.target.value,
+                  )
+                }
+              />
+            </div>
+
+            <div className="crear-campo">
+              <label htmlFor={`minutos-${index}`}>
+                Minutos estimados
+              </label>
+
+              <input
+                id={`minutos-${index}`}
+                type="number"
+                min="1"
+                value={tarea.estimated_minutes}
+                onChange={(event) =>
+                  actualizarSubtarea(
+                    index,
+                    'estimated_minutes',
+                    event.target.value,
+                  )
+                }
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section className="crear-resumen">
+      <div className="crear-resumen-header">
+        <div>
+          <h2>Plan inicial</h2>
+
+          <p>
+            Revisa la información antes de crear el evento.
+          </p>
+        </div>
+
+        <div className="crear-tiempo">
+          <strong>{Math.floor(totalTiempo / 60)} h</strong>
+          <span>tiempo estimado</span>
+        </div>
+      </div>
+
+      <div className="crear-acciones">
+        <button
+          className="crear-boton crear-boton-secundario"
+          type="button"
+          onClick={volverAtras}
+          disabled={cargando}
+        >
+          Volver atrás
         </button>
-      </section>
-    </main>
-  )
+        <button
+          className="crear-boton"
+          type="button"
+          onClick={guardarEvento}
+          disabled={cargando}
+        >
+          {cargando ? 'Creando evento...' : 'Crear evento'}
+        </button>
+      </div>
+    </section>
+  </main>
+)
 }
