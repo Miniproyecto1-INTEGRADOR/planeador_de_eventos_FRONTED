@@ -99,24 +99,17 @@ export default function CrearEvento() {
         name: evento.name.trim(),
         event_type: evento.event_type.trim(),
         user_id: localStorage.getItem('userId'),
+        subtasks: subtareas.map((tarea) => ({
+          title: tarea.title.trim(),
+          description: `Gestión logística para ${evento.name.trim()}`,
+          target_date: tarea.target_date || evento.event_date.split('T')[0],
+          estimated_minutes: Number(tarea.estimated_minutes),
+          status: 'pending',
+        })),
       }
 
-      const respuestaEvento = await axios.post(`${API_URL}/eventos/`, eventoPayload)
-      const eventoCreado = respuestaEvento.data
-
-      const subtareasPayload = subtareas.map((tarea) => ({
-        title: tarea.title.trim(),
-        description: `Gestión logística para ${eventoCreado.name}`,
-        target_date: tarea.target_date || eventoCreado.event_date.split('T')[0],
-        estimated_minutes: Number(tarea.estimated_minutes),
-        status: 'pending',
-      }))
-
-      await Promise.all(
-        subtareasPayload.map((subtarea) =>
-          axios.post(`${API_URL}/eventos/${eventoCreado.id}/subtareas/`, subtarea),
-        ),
-      )
+      const respuestaPlan = await axios.post(`${API_URL}/eventos/plan-inicial/`, eventoPayload)
+      const eventoCreado = respuestaPlan.data.event
 
      setMensaje('Evento y gestiones logísticas creados correctamente.')
 
