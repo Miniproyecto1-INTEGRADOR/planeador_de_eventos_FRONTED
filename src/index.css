@@ -553,3 +553,19 @@ button:disabled {
   background: #fff1f0;
   color: #9b2a24;
 }
+
+/* Iteración 2: mejora de proximidad y consistencia en formularios */
+.form-card .fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.form-card .fieldset label {
+  margin-bottom: 0;
+}
+
+.form-card input,
+.form-card select {
+  width: 100%;
+}
