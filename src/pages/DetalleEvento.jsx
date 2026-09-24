@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
+import { getApiErrorMessage } from '../utils/apiError.js'
 
 const panelStyle = {
   maxWidth: 1100,
@@ -26,6 +27,26 @@ const baseButton = {
   cursor: 'pointer',
 }
 
+const tiposEvento = [
+  'Bodas',
+  'XV años',
+  'Bautizos',
+  'Primeras comuniones',
+  'Confirmaciones',
+  'Baby showers',
+  'Cumpleaños y fiestas infantiles',
+  'Aniversarios de bodas',
+  'Despedidas de soltero(a)',
+  'Graduaciones',
+  'Comidas o cenas familiares',
+  'Fiestas de revelación de género',
+  'Renovación de votos',
+  'Fiestas de jubilación',
+  'Cumpleaños',
+  'Corporativo',
+  'Conferencia',
+]
+
 export default function DetalleEvento() {
   const { id: routeId } = useParams()
   const id = routeId || sessionStorage.getItem('selectedEventId')
@@ -34,7 +55,9 @@ export default function DetalleEvento() {
   const [progreso, setProgreso] = useState({ done: 0, total: 0, percent: 0 })
   const [titulo, setTitulo] = useState('')
   const [targetDate, setTargetDate] = useState('')
-  const [estimatedMinutes, setEstimatedMinutes] = useState(60)
+  const [estimatedHours, setEstimatedHours] = useState(1)
+  const [editando, setEditando] = useState(false)
+  const [formEvento, setFormEvento] = useState({ name: '', event_type: 'Bodas', event_date: '' })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -56,16 +79,71 @@ export default function DetalleEvento() {
       setSubtareas(subtareasResponse.data)
       const progresoResponse = await axios.get(`${API_URL}/eventos/${id}/progreso`)
       setProgreso(progresoResponse.data)
-    } catch {
-      setError('No se pudo cargar el evento.')
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
+    const mensajeFlash = sessionStorage.getItem('eventoCreadoMensaje')
+    if (mensajeFlash) {
+      setSuccess(mensajeFlash)
+      sessionStorage.removeItem('eventoCreadoMensaje')
+    }
+
     cargarDatos()
   }, [id])
+
+  const abrirEdicion = () => {
+    if (!evento) return
+    const fechaLocal = evento.event_date
+      ? new Date(evento.event_date).toLocaleString('sv-SE', { timeZone: 'UTC' }).replace(' ', 'T').slice(0, 16)
+      : ''
+    setFormEvento({
+      name: evento.name,
+      event_type: evento.event_type,
+      event_date: fechaLocal,
+    })
+    setEditando(true)
+  }
+
+  const guardarEvento = async () => {
+    setError('')
+    setSuccess('')
+
+    if (!formEvento.name.trim()) {
+      setError('El nombre del evento es obligatorio.')
+      return
+    }
+    if (!formEvento.event_type.trim()) {
+      setError('El tipo de evento es obligatorio.')
+      return
+    }
+    if (!formEvento.event_date) {
+      setError('La fecha del evento es obligatoria.')
+      return
+    }
+
+    setActionLoading('event-edit')
+    try {
+      const respuesta = await axios.patch(`${API_URL}/eventos/${id}`, {
+        name: formEvento.name.trim(),
+        event_type: formEvento.event_type.trim(),
+        event_date: formEvento.event_date,
+      })
+
+      setEvento(respuesta.data)
+      setEditando(false)
+      setSuccess('Evento actualizado correctamente.')
+      await cargarDatos()
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
+    } finally {
+      setActionLoading('')
+    }
+  }
 
   const crearSubtarea = async () => {
     setError('')
@@ -74,8 +152,8 @@ export default function DetalleEvento() {
       setError('Escribe el nombre de la gestión que quieres organizar.')
       return
     }
-    if (Number(estimatedMinutes) <= 0) {
-      setError('Indica un tiempo estimado mayor que 0 minutos.')
+    if (Number(estimatedHours) <= 0) {
+      setError('Indica un tiempo estimado mayor que 0 horas.')
       return
     }
     setActionLoading('create')
@@ -84,16 +162,16 @@ export default function DetalleEvento() {
         title: titulo,
         description: 'Gestión logística',
         target_date: targetDate || evento.event_date.split('T')[0],
-        estimated_minutes: Number(estimatedMinutes),
+        estimated_minutes: Number(estimatedHours) * 60,
         status: 'pending',
       })
       setTitulo('')
       setTargetDate('')
-      setEstimatedMinutes(60)
+      setEstimatedHours(1)
       setSuccess('Gestión añadida al plan del evento.')
       await cargarDatos()
     } catch (err) {
-      setError(err.response?.data?.detail || 'No se pudo guardar la subtarea.')
+      setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
     } finally {
       setActionLoading('')
     }
@@ -108,7 +186,7 @@ export default function DetalleEvento() {
       setSuccess(status === 'done' ? 'Gestión marcada como completada.' : 'Gestión pospuesta para revisarla después.')
       await cargarDatos()
     } catch (err) {
-      setError(err.response?.data?.detail || 'No se pudo actualizar el estado.')
+      setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
     } finally {
       setActionLoading('')
     }
@@ -123,7 +201,7 @@ export default function DetalleEvento() {
       setSuccess('Gestión eliminada del evento.')
       await cargarDatos()
     } catch (err) {
-      setError(err.response?.data?.detail || 'No se pudo eliminar la gestión.')
+      setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
     } finally {
       setActionLoading('')
     }
@@ -137,7 +215,7 @@ export default function DetalleEvento() {
       await axios.delete(`${API_URL}/eventos/${id}`)
       window.location.href = '/hoy'
     } catch (err) {
-      setError(err.response?.data?.detail || 'No se pudo eliminar el evento.')
+      setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
       setActionLoading('')
     }
   }
@@ -170,34 +248,82 @@ export default function DetalleEvento() {
           {/* Botón para volver atrás en el historial (añadido) */}
           <Link to="/hoy" style={{ ...baseButton, background: '#edf2f3', color: '#243434', textDecoration: 'none' }}>Volver a la agenda</Link>
 
+          <button onClick={abrirEdicion} disabled={actionLoading === 'event' || actionLoading === 'event-edit'} style={{ ...baseButton, background: '#eaf8f1', color: '#0d5c3f' }}>Editar evento</button>
+
           <button onClick={eliminarEvento} disabled={actionLoading === 'event'} style={{ ...baseButton, background: '#ffe5e1', color: '#9b2a24' }}>{actionLoading === 'event' ? 'Eliminando...' : 'Eliminar evento'}</button>
         </div>
       </div>
 
-      {error && <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c' }} role="alert">{error}</div>}
-      {success && <div style={{ ...cardStyle, background: '#edfaf3', borderLeft: '4px solid #1d7a5f' }} role="status">{success}</div>}
+      {error && <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c', color: '#8b2f2a' }} role="alert">{error}</div>}
+      {success && (
+        <div
+          style={{
+            ...cardStyle,
+            background: '#edfaf3',
+            borderLeft: '4px solid #1d7a5f',
+            color: '#0d5d42',
+            fontWeight: 700,
+            boxShadow: '0 4px 18px rgba(29, 122, 95, 0.12)',
+          }}
+          role="status"
+        >
+          {success}
+        </div>
+      )}
 
-      <div style={cardStyle}>
-        <div><strong>Tipo:</strong> {evento.event_type}</div>
-        <div><strong>Fecha:</strong> {new Date(evento.event_date).toLocaleString()}</div>
-        <div><strong>Subtareas:</strong> {subtareas.length}</div>
-        <div className="detalle-progreso">
-          <div className="detalle-progreso-cabecera">
-            <strong>Avance del evento</strong>
-            <span>{progreso.done} de {progreso.total} completadas · {progreso.percent}%</span>
+      {editando ? (
+        <div style={cardStyle}>
+          <h2 style={{ marginTop: 0 }}>Editar evento</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700 }}>Nombre</label>
+              <input value={formEvento.name} onChange={(e) => setFormEvento((prev) => ({ ...prev, name: e.target.value }))} style={{ width: '100%', padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700 }}>Tipo</label>
+              <select value={formEvento.event_type} onChange={(e) => setFormEvento((prev) => ({ ...prev, event_type: e.target.value }))} style={{ width: '100%', padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }}>
+                {tiposEvento.map((tipo) => (
+                  <option key={tipo} value={tipo}>{tipo}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700 }}>Fecha</label>
+              <input type="datetime-local" value={formEvento.event_date} onChange={(e) => setFormEvento((prev) => ({ ...prev, event_date: e.target.value }))} style={{ width: '100%', padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
+            </div>
           </div>
-          <div className="progreso-barra" aria-label={`Avance del evento: ${progreso.percent}%`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={progreso.percent}>
-            <div style={{ width: `${progreso.percent}%` }} />
+
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button onClick={guardarEvento} disabled={actionLoading === 'event-edit'} style={{ ...baseButton, background: '#1d7a5f', color: '#fff' }}>{actionLoading === 'event-edit' ? 'Guardando...' : 'Guardar cambios'}</button>
+            <button onClick={() => setEditando(false)} style={{ ...baseButton, background: '#edf2f3', color: '#243434' }}>Cancelar</button>
           </div>
         </div>
-      </div>
+      ) : (
+        <div style={cardStyle}>
+          <div><strong>Tipo:</strong> {evento.event_type}</div>
+          <div><strong>Fecha:</strong> {new Date(evento.event_date).toLocaleString()}</div>
+          <div><strong>Subtareas:</strong> {subtareas.length}</div>
+          <div className="detalle-progreso">
+            <div className="detalle-progreso-cabecera">
+              <strong>Avance del evento</strong>
+              <span>{progreso.done} de {progreso.total} completadas · {progreso.percent}%</span>
+            </div>
+            <div className="progreso-barra" aria-label={`Avance del evento: ${progreso.percent}%`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={progreso.percent}>
+              <div style={{ width: `${progreso.percent}%` }} />
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={cardStyle}>
         <h2 style={{ marginTop: 0 }}>Agregar subtarea</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.75rem' }}>
           <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Título de la subtarea" style={{ padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
           <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} style={{ padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
-          <input type="number" min="1" value={estimatedMinutes} onChange={(e) => setEstimatedMinutes(e.target.value)} style={{ padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 0.25rem', border: '1px solid #dfe7e6', borderRadius: 10, background: '#fff' }}>
+            <input type="number" min="0.5" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} style={{ border: 'none', outline: 'none', width: '100%', padding: '0.75rem 0.25rem 0.75rem 0.75rem', background: 'transparent' }} />
+            <span style={{ color: '#586464', fontWeight: 700, paddingRight: '0.75rem' }}>h</span>
+          </div>
         </div>
         <div style={{ marginTop: '0.75rem' }}>
           <button onClick={crearSubtarea} disabled={actionLoading === 'create'} style={{ ...baseButton, background: '#1d7a5f', color: '#fff' }}>{actionLoading === 'create' ? 'Guardando...' : 'Guardar gestión'}</button>
