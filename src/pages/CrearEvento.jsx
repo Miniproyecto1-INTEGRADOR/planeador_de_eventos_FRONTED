@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
+import { getApiErrorMessage } from '../utils/apiError.js'
 
 const valoresIniciales = {
   name: '',
@@ -11,7 +12,7 @@ const valoresIniciales = {
 }
 
 const subtareaBase = [
-  { title: '', target_date: '', estimated_minutes: '' },
+  { title: '', target_date: '', estimated_hours: '' },
 ]
 
 const tiposEvento = [
@@ -48,7 +49,7 @@ export default function CrearEvento() {
     evento.name.trim() ||
     evento.event_date ||
     evento.color !== valoresIniciales.color ||
-    subtareas.some((tarea) => tarea.title.trim() || tarea.target_date || tarea.estimated_minutes),
+    subtareas.some((tarea) => tarea.title.trim() || tarea.target_date || tarea.estimated_hours),
   )
 
   useEffect(() => {
@@ -79,7 +80,7 @@ export default function CrearEvento() {
   }
 
   const totalTiempo = useMemo(
-    () => subtareas.reduce((total, item) => total + Number(item.estimated_minutes || 0), 0),
+    () => subtareas.reduce((total, item) => total + Number(item.estimated_hours || 0), 0),
     [subtareas],
   )
 
@@ -89,7 +90,7 @@ export default function CrearEvento() {
         pos === index
           ? {
               ...tarea,
-              [campo]: campo === 'estimated_minutes' ? (valor === '' ? '' : Number(valor)) : valor,
+              [campo]: campo === 'estimated_hours' ? (valor === '' ? '' : Number(valor)) : valor,
             }
           : tarea,
       ),
@@ -97,7 +98,7 @@ export default function CrearEvento() {
   }
 
   const agregarSubtarea = () => {
-    setSubtareas((actuales) => [...actuales, { title: '', target_date: '', estimated_minutes: '' }])
+    setSubtareas((actuales) => [...actuales, { title: '', target_date: '', estimated_hours: '' }])
   }
 
   const eliminarSubtarea = (index) => {
@@ -122,10 +123,10 @@ export default function CrearEvento() {
     }
 
     const subtareasConContenido = subtareas.filter(
-      (item) => item.title.trim() || item.target_date || item.estimated_minutes,
+      (item) => item.title.trim() || item.target_date || item.estimated_hours,
     )
     const subtareasValidas = subtareasConContenido.filter(
-      (item) => item.title.trim() && Number(item.estimated_minutes) > 0,
+      (item) => item.title.trim() && Number(item.estimated_hours) > 0,
     )
 
     if (!subtareasConContenido.length) {
@@ -149,23 +150,28 @@ export default function CrearEvento() {
           title: tarea.title.trim(),
           description: `Gestión logística para ${evento.name.trim()}`,
           target_date: tarea.target_date || evento.event_date.split('T')[0],
-          estimated_minutes: Number(tarea.estimated_minutes),
+          estimated_minutes: Number(tarea.estimated_hours) * 60,
           status: 'pending',
         })),
       }
 
       const respuestaPlan = await axios.post(`${API_URL}/eventos/plan-inicial/`, eventoPayload)
       const eventoCreado = respuestaPlan.data.event
+      const totalGestiones = subtareasValidas.length
 
-     setMensaje('Evento y gestiones logísticas creados correctamente.')
+      const mensajeExito = totalGestiones > 0
+        ? `¡Evento creado exitosamente! Se añadieron ${totalGestiones} gestiones al plan logístico inicial.`
+        : '¡Evento creado exitosamente!'
 
-     setTimeout(() => {
-    sessionStorage.setItem('selectedEventId', eventoCreado.id)
-    navigate('/evento/subtareas')
-     }, 500)
-
+      sessionStorage.setItem('selectedEventId', eventoCreado.id)
+      sessionStorage.setItem('eventoCreadoMensaje', mensajeExito)
+      setMensaje(mensajeExito)
+      navigate('/evento/subtareas')
     } catch (err) {
-      const mensajeError = err.response?.data?.detail || 'No se pudo crear el evento.'
+      const mensajeError = getApiErrorMessage(
+        err,
+        'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.',
+      )
       setError(mensajeError)
     } finally {
       setCargando(false)
@@ -185,7 +191,7 @@ return (
 
       <div className="metricas">
         <span>{subtareas.length} tareas</span>
-        <span>{totalTiempo} min estimados</span>
+        <span>{totalTiempo} h estimadas</span>
       </div>
     </header>
 
@@ -370,19 +376,20 @@ return (
             </div>
 
             <div className="crear-campo">
-              <label htmlFor={`minutos-${index}`}>
-                Minutos estimados
+              <label htmlFor={`horas-${index}`}>
+                Horas estimadas
               </label>
 
               <input
-                id={`minutos-${index}`}
+                id={`horas-${index}`}
                 type="number"
-                min="1"
-                value={tarea.estimated_minutes}
+                min="0.5"
+                step="0.5"
+                value={tarea.estimated_hours}
                 onChange={(event) =>
                   actualizarSubtarea(
                     index,
-                    'estimated_minutes',
+                    'estimated_hours',
                     event.target.value,
                   )
                 }
@@ -419,7 +426,7 @@ return (
         </div>
 
         <div className="crear-tiempo">
-          <strong>{Math.floor(totalTiempo / 60)} h</strong>
+          <strong>{totalTiempo} h</strong>
           <span>tiempo estimado</span>
         </div>
       </div>
