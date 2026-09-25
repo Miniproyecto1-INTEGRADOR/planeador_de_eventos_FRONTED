@@ -15,6 +15,23 @@
   max-width: 720px;
 }
 
+.crear-encabezado-lateral {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.crear-acciones-superior {
+  margin-top: 0;
+}
+
+.crear-acciones-superior .crear-boton {
+  min-height: 36px;
+  padding: .5rem .85rem;
+  font-size: .78rem;
+}
+
 .crear-seccion {
   margin-top: 1.5rem;
   padding: 1.5rem;
@@ -210,10 +227,24 @@
   font-size: .75rem;
 }
 
+.crear-resumen-acciones {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+.crear-acciones-inferior {
+  width: auto;
+  margin-top: 0;
+}
+
 .crear-acciones {
   display: flex;
   gap: .75rem;
   justify-content: flex-end;
+  align-items: center;
+  width: 100%;
   margin-top: 1.2rem;
 }
 
@@ -271,13 +302,25 @@
   }
 
   .crear-plan-header,
-  .crear-resumen-header {
+  .crear-resumen-header,
+  .crear-panel .encabezado {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .crear-encabezado-lateral {
+    width: 100%;
     align-items: flex-start;
   }
 
   .crear-tiempo {
     text-align: left;
+  }
+
+  .crear-resumen-acciones {
+    width: 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
   }
 }
 

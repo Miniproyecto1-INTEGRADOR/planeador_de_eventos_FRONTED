@@ -76,7 +76,7 @@ export default function CrearEvento() {
 
   const volverAtras = () => {
     if (tieneCambios && !window.confirm('Tienes datos sin guardar. ¿Deseas salir sin crear el evento?')) return
-    navigate(-1)
+    navigate('/hoy')
   }
 
   const totalTiempo = useMemo(
@@ -189,9 +189,30 @@ return (
         </p>
       </div>
 
-      <div className="metricas">
-        <span>{subtareas.length} tareas</span>
-        <span>{totalTiempo} h estimadas</span>
+      <div className="crear-encabezado-lateral">
+        <div className="metricas">
+          <span>{subtareas.length} tareas</span>
+          <span>{totalTiempo} h estimadas</span>
+        </div>
+
+        <div className="crear-acciones crear-acciones-superior">
+          <button
+            className="crear-boton crear-boton-secundario"
+            type="button"
+            onClick={volverAtras}
+            disabled={cargando}
+          >
+            Volver atrás
+          </button>
+          <button
+            className="crear-boton"
+            type="button"
+            onClick={guardarEvento}
+            disabled={cargando}
+          >
+            {cargando ? 'Creando evento...' : 'Crear evento'}
+          </button>
+        </div>
       </div>
     </header>
 
@@ -419,36 +440,38 @@ return (
       <div className="crear-resumen-header">
         <div>
           <h2>Plan inicial</h2>
-
           <p>
             Revisa la información antes de crear el evento.
           </p>
         </div>
 
-        <div className="crear-tiempo">
-          <strong>{totalTiempo} h</strong>
-          <span>tiempo estimado</span>
+        <div className="crear-resumen-acciones">
+          <div className="crear-tiempo">
+            <strong>{totalTiempo} h</strong>
+            <span>tiempo estimado</span>
+          </div>
+
+          <div className="crear-acciones crear-acciones-inferior">
+            <button
+              className="crear-boton crear-boton-secundario"
+              type="button"
+              onClick={volverAtras}
+              disabled={cargando}
+            >
+              Volver atrás
+            </button>
+            <button
+              className="crear-boton"
+              type="button"
+              onClick={guardarEvento}
+              disabled={cargando}
+            >
+              {cargando ? 'Creando evento...' : 'Crear evento'}
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="crear-acciones">
-        <button
-          className="crear-boton crear-boton-secundario"
-          type="button"
-          onClick={volverAtras}
-          disabled={cargando}
-        >
-          Volver atrás
-        </button>
-        <button
-          className="crear-boton"
-          type="button"
-          onClick={guardarEvento}
-          disabled={cargando}
-        >
-          {cargando ? 'Creando evento...' : 'Crear evento'}
-        </button>
-      </div>
     </section>
   </main>
 )

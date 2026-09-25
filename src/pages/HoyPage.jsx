@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
 
@@ -27,7 +27,6 @@ const baseButton = {
 }
 
 export default function HoyPage({ onLogout }) {
-  const navigate = useNavigate()
   const [data, setData] = useState({ vencidas: [], hoy: [], proximas: [] })
   const [nombresEventos, setNombresEventos] = useState({})
   const [loading, setLoading] = useState(true)
@@ -136,12 +135,6 @@ export default function HoyPage({ onLogout }) {
           <h1 style={{ margin: '0.4rem 0 0' }}>Tu plan del día</h1>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => navigate(-1)}
-            style={{ ...baseButton, background: '#edf2f3', color: '#243434' }}
-          >
-            Atrás
-          </button>
           <Link
             to="/crear"
             style={{ ...baseButton, background: '#1d7a5f', color: '#fff', textDecoration: 'none' }}
