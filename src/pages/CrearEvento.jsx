@@ -308,7 +308,7 @@ return (
         </div>
 
         <div className="crear-campo">
-          <label htmlFor="color">Color identificador</label>
+          <label htmlFor="color">Color del evento</label>
 
           <div className="crear-color">
             <input
@@ -322,8 +322,6 @@ return (
                 }))
               }
             />
-
-            <span>{evento.color}</span>
           </div>
         </div>
       </div>

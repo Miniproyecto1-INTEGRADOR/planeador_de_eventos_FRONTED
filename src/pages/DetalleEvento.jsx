@@ -56,6 +56,7 @@ export default function DetalleEvento() {
   const [titulo, setTitulo] = useState('')
   const [targetDate, setTargetDate] = useState('')
   const [estimatedHours, setEstimatedHours] = useState(1)
+  const [mostrarFormularioSubtarea, setMostrarFormularioSubtarea] = useState(false)
   const [editando, setEditando] = useState(false)
   const [formEvento, setFormEvento] = useState({ name: '', event_type: 'Bodas', event_date: '' })
   const [loading, setLoading] = useState(true)
@@ -168,6 +169,7 @@ export default function DetalleEvento() {
       setTitulo('')
       setTargetDate('')
       setEstimatedHours(1)
+      setMostrarFormularioSubtarea(false)
       setSuccess('Gestión añadida al plan del evento.')
       await cargarDatos()
     } catch (err) {
@@ -221,7 +223,7 @@ export default function DetalleEvento() {
   }
 
   if (loading) {
-    return <main style={panelStyle}><div style={cardStyle} className="state-loading" role="status">Estamos preparando el detalle del evento...</div></main>
+    return <main style={panelStyle} className="detalle-loading-page"><div style={cardStyle} className="state-loading detalle-loading-card" role="status">Estamos preparando el detalle del evento...</div></main>
   }
 
   if (!id || !evento) {
@@ -300,9 +302,20 @@ export default function DetalleEvento() {
         </div>
       ) : (
         <div style={cardStyle}>
-          <div><strong>Tipo:</strong> {evento.event_type}</div>
-          <div><strong>Fecha:</strong> {new Date(evento.event_date).toLocaleString()}</div>
-          <div><strong>Subtareas:</strong> {subtareas.length}</div>
+          <div className="detalle-evento-meta">
+            <div className="detalle-evento-meta-item">
+              <span>Tipo</span>
+              <strong>{evento.event_type}</strong>
+            </div>
+            <div className="detalle-evento-meta-item">
+              <span>Fecha</span>
+              <strong>{new Date(evento.event_date).toLocaleString()}</strong>
+            </div>
+            <div className="detalle-evento-meta-item">
+              <span>Subtareas</span>
+              <strong>{subtareas.length}</strong>
+            </div>
+          </div>
           <div className="detalle-progreso">
             <div className="detalle-progreso-cabecera">
               <strong>Avance del evento</strong>
@@ -315,20 +328,22 @@ export default function DetalleEvento() {
         </div>
       )}
 
-      <div style={cardStyle}>
-        <h2 style={{ marginTop: 0 }}>Agregar subtarea</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.75rem' }}>
-          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Título de la subtarea" style={{ padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
-          <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} style={{ padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 0.25rem', border: '1px solid #dfe7e6', borderRadius: 10, background: '#fff' }}>
-            <input type="number" min="0.5" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} style={{ border: 'none', outline: 'none', width: '100%', padding: '0.75rem 0.25rem 0.75rem 0.75rem', background: 'transparent' }} />
-            <span style={{ color: '#586464', fontWeight: 700, paddingRight: '0.75rem' }}>h</span>
+      {mostrarFormularioSubtarea && (
+        <div style={cardStyle}>
+          <h2 style={{ marginTop: 0 }}>Agregar subtarea</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.75rem' }}>
+            <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Título de la subtarea" style={{ padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
+            <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} style={{ padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 0.25rem', border: '1px solid #dfe7e6', borderRadius: 10, background: '#fff' }}>
+              <input type="number" min="0.5" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} style={{ border: 'none', outline: 'none', width: '100%', padding: '0.75rem 0.25rem 0.75rem 0.75rem', background: 'transparent' }} />
+              <span style={{ color: '#586464', fontWeight: 700, paddingRight: '0.75rem' }}>h</span>
+            </div>
+          </div>
+          <div style={{ marginTop: '0.75rem' }}>
+            <button onClick={crearSubtarea} disabled={actionLoading === 'create'} style={{ ...baseButton, background: '#1d7a5f', color: '#fff' }}>{actionLoading === 'create' ? 'Guardando...' : 'Guardar gestión'}</button>
           </div>
         </div>
-        <div style={{ marginTop: '0.75rem' }}>
-          <button onClick={crearSubtarea} disabled={actionLoading === 'create'} style={{ ...baseButton, background: '#1d7a5f', color: '#fff' }}>{actionLoading === 'create' ? 'Guardando...' : 'Guardar gestión'}</button>
-        </div>
-      </div>
+      )}
 
       <div style={cardStyle}>
         <h2 style={{ marginTop: 0 }}>Subtareas</h2>
@@ -344,8 +359,8 @@ export default function DetalleEvento() {
                   <div style={{ marginTop: 8, fontSize: '0.9rem' }}>Estado: {subtask.status === 'done' ? 'Completada' : subtask.status === 'postponed' ? 'Pospuesta' : 'Pendiente'}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <button onClick={() => cambiarEstado(subtask.id, 'done')} disabled={actionLoading === subtask.id} style={{ ...baseButton, background: '#dff8ed', color: '#0f5a3a' }}>Hecha</button>
-                  <button onClick={() => cambiarEstado(subtask.id, 'postponed')} disabled={actionLoading === subtask.id} style={{ ...baseButton, background: '#eef3ff', color: '#2b4d96' }}>Posponer</button>
+                  <button onClick={() => cambiarEstado(subtask.id, 'done')} disabled={actionLoading === subtask.id || subtask.status === 'done'} style={{ ...baseButton, background: '#dff8ed', color: '#0f5a3a' }}>Hecha</button>
+                  <button onClick={() => cambiarEstado(subtask.id, 'postponed')} disabled={actionLoading === subtask.id || subtask.status === 'postponed'} style={{ ...baseButton, background: '#eef3ff', color: '#2b4d96' }}>Posponer</button>
                   <button onClick={() => eliminarSubtarea(subtask.id)} disabled={actionLoading === subtask.id} style={{ ...baseButton, background: '#ffe5e1', color: '#9b2a24' }}>{actionLoading === subtask.id ? 'Guardando...' : 'Eliminar'}</button>
                 </div>
               </div>
@@ -353,6 +368,18 @@ export default function DetalleEvento() {
           </div>
         )}
       </div>
+
+      {!mostrarFormularioSubtarea && (
+        <div className="detalle-agregar-subtarea">
+          <button
+            type="button"
+            onClick={() => setMostrarFormularioSubtarea(true)}
+            style={{ ...baseButton, background: '#1d7a5f', color: '#fff' }}
+          >
+            Agregar subtarea
+          </button>
+        </div>
+      )}
     </main>
   )
 }

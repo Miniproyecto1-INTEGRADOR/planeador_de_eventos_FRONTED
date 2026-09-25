@@ -116,6 +116,8 @@ export default function HoyPage({ onLogout }) {
     </div>
   )
 
+  const totalGestiones = data.vencidas.length + data.hoy.length + data.proximas.length
+
   return (
     <main style={panelStyle}>
       <header
@@ -151,10 +153,6 @@ export default function HoyPage({ onLogout }) {
         </div>
       </header>
 
-      <div style={{ ...cardStyle, background: '#edfaf3', borderLeft: '4px solid #1d7a5f' }}>
-        <strong>Regla de orden:</strong> primero tareas vencidas, luego las de hoy y por último las próximas. Dentro de cada bloque, se ordenan por fecha más temprana y luego por menor esfuerzo estimado.
-      </div>
-
       {error && (
         <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c' }} role="alert">
           {error}
@@ -165,20 +163,23 @@ export default function HoyPage({ onLogout }) {
       )}
 
       {loading ? (
-        <div style={cardStyle} className="state-loading" role="status">Estamos ordenando tus gestiones...</div>
+        <div className="operativa-loading-page">
+          <div style={cardStyle} className="state-loading operativa-loading-card" role="status">Estamos ordenando tus gestiones...</div>
+        </div>
       ) : (
-        <>
-          {data.vencidas.length + data.hoy.length + data.proximas.length === 0 && (
-            <div style={{ ...cardStyle, background: '#edfaf3', borderLeft: '4px solid #1d7a5f' }} className="state-empty-block">
-              <strong>Tu plan comienza aquí</strong>
-              <p>No tienes gestiones pendientes todavía. Crea tu primer evento y organiza los próximos pasos.</p>
-              <Link to="/crear" style={{ ...baseButton, background: '#1d7a5f', color: '#fff', textDecoration: 'none' }}>Crear mi primer evento</Link>
-            </div>
-          )}
+        totalGestiones === 0 ? (
+          <div style={{ ...cardStyle, background: '#edfaf3', borderLeft: '4px solid #1d7a5f' }} className="state-empty-block hoy-empty-block">
+            <strong>Tu plan comienza aquí</strong>
+            <p>Aún no tienes gestiones. Crea tu primer evento para comenzar.</p>
+            <Link to="/crear" style={{ ...baseButton, background: '#1d7a5f', color: '#fff', textDecoration: 'none' }}>Crear mi primer evento</Link>
+          </div>
+        ) : (
+          <>
           {renderLista('Vencidas', data.vencidas)}
           {renderLista('Para hoy', data.hoy)}
           {renderLista('Próximas', data.proximas)}
-        </>
+          </>
+        )
       )}
     </main>
   )

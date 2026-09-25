@@ -1,5 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
 import CrearEvento from './pages/CrearEvento.jsx'
 import HoyPage from './pages/HoyPage.jsx'
@@ -29,6 +29,32 @@ function App() {
     if (token) axios.defaults.headers.common.Authorization = `Bearer ${token}`
     return Boolean(token)
   })
+
+  useEffect(() => {
+    const interceptorId = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        const detail = String(error?.response?.data?.detail || '').toLowerCase()
+        const sessionExpired = error?.response?.status === 401 && (
+          detail.includes('jwt expired') ||
+          detail.includes('token expired') ||
+          detail.includes('invalid jwt')
+        )
+
+        if (sessionExpired) {
+          localStorage.removeItem('authToken')
+          localStorage.removeItem('userId')
+          sessionStorage.removeItem('selectedEventId')
+          delete axios.defaults.headers.common.Authorization
+          setIsAuthenticated(false)
+        }
+
+        return Promise.reject(error)
+      },
+    )
+
+    return () => axios.interceptors.response.eject(interceptorId)
+  }, [])
 
   const handleLogin = () => {
     localStorage.setItem('authSessionVersion', AUTH_SESSION_VERSION)

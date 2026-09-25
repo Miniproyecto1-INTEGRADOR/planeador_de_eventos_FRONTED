@@ -61,7 +61,9 @@ export default function ProgresoPage() {
       )}
 
       {loading ? (
-        <div style={cardStyle} className="state-loading" role="status">Estamos calculando el avance de tus eventos...</div>
+        <div className="operativa-loading-page">
+          <div style={cardStyle} className="state-loading operativa-loading-card" role="status">Estamos calculando el avance de tus eventos...</div>
+        </div>
       ) : (
         <div style={{ display: 'grid', gap: '1rem' }}>
           {eventos.length === 0 ? (
