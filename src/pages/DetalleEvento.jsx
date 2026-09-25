@@ -60,6 +60,8 @@ export default function DetalleEvento() {
   const [formEvento, setFormEvento] = useState({ name: '', event_type: 'Bodas', event_date: '' })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
+  const [progressError, setProgressError] = useState('')
   const [success, setSuccess] = useState('')
   const [actionLoading, setActionLoading] = useState('')
 
@@ -70,6 +72,8 @@ export default function DetalleEvento() {
     }
     setLoading(true)
     setError('')
+    setLoadError('')
+    setProgressError('')
     try {
       const [eventoResponse, subtareasResponse] = await Promise.all([
         axios.get(`${API_URL}/eventos/${id}/`),
@@ -77,10 +81,18 @@ export default function DetalleEvento() {
       ])
       setEvento(eventoResponse.data)
       setSubtareas(subtareasResponse.data)
+    } catch (err) {
+      setLoadError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
+      setLoading(false)
+      return
+    }
+
+    try {
       const progresoResponse = await axios.get(`${API_URL}/eventos/${id}/progreso`)
       setProgreso(progresoResponse.data)
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
+      setLoadError('Se perdió la conexión con el servidor, por favor vuelva a intentarlo.')
+      setProgressError(getApiErrorMessage(err, 'No pudimos cargar el avance de este evento.'))
     } finally {
       setLoading(false)
     }
@@ -224,6 +236,19 @@ export default function DetalleEvento() {
     return <main style={panelStyle}><div style={cardStyle} className="state-loading" role="status">Estamos preparando el detalle del evento...</div></main>
   }
 
+  if (loadError && !evento) {
+    return (
+      <main style={panelStyle}>
+        <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c', color: '#8b2f2a' }} className="state-error" role="alert">
+          <div aria-hidden="true" style={{ fontSize: '2rem', fontWeight: 800 }}>!</div>
+          <strong>No pudimos cargar los componentes</strong>
+          <p>Se perdió la conexión con el servidor, por favor vuelva a intentarlo.</p>
+          <button type="button" onClick={cargarDatos} className="state-action">Reintentar</button>
+        </div>
+      </main>
+    )
+  }
+
   if (!id || !evento) {
     return (
       <main style={panelStyle}>
@@ -254,6 +279,14 @@ export default function DetalleEvento() {
         </div>
       </div>
 
+      {loadError && (
+        <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c', color: '#8b2f2a' }} className="state-error" role="alert">
+          <div aria-hidden="true" style={{ fontSize: '2rem', fontWeight: 800 }}>!</div>
+          <strong>Error crítico de carga</strong>
+          <p>{loadError}</p>
+          <button type="button" onClick={cargarDatos} className="state-action">Reintentar</button>
+        </div>
+      )}
       {error && <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c', color: '#8b2f2a' }} role="alert">{error}</div>}
       {success && (
         <div
@@ -308,9 +341,16 @@ export default function DetalleEvento() {
               <strong>Avance del evento</strong>
               <span>{progreso.done} de {progreso.total} completadas · {progreso.percent}%</span>
             </div>
-            <div className="progreso-barra" aria-label={`Avance del evento: ${progreso.percent}%`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={progreso.percent}>
-              <div style={{ width: `${progreso.percent}%` }} />
-            </div>
+            {progressError ? (
+              <div className="progreso-error" role="alert">
+                <strong>!</strong>
+                <span>{progressError}</span>
+              </div>
+            ) : (
+              <div className="progreso-barra" aria-label={`Avance del evento: ${progreso.percent}%`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={progreso.percent}>
+                <div style={{ width: `${progreso.percent}%` }} />
+              </div>
+            )}
           </div>
         </div>
       )}

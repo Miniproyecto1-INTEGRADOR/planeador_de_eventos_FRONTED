@@ -176,8 +176,9 @@ export default function HoyPage({ onLogout }) {
       ) : (
         <>
           {data.vencidas.length + data.hoy.length + data.proximas.length === 0 && (
-            <div style={{ ...cardStyle, background: '#edfaf3', borderLeft: '4px solid #1d7a5f' }} className="state-empty-block">
-              <strong>Tu plan comienza aquí</strong>
+            <div style={{ ...cardStyle, background: '#edfaf3', borderLeft: '4px solid #1d7a5f', textAlign: 'center' }} className="state-empty-block">
+              <div aria-hidden="true" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>&#128197;</div>
+              <strong>¿Aún no tienes eventos?</strong>
               <p>No tienes gestiones pendientes todavía. Crea tu primer evento y organiza los próximos pasos.</p>
               <Link to="/crear" style={{ ...baseButton, background: '#1d7a5f', color: '#fff', textDecoration: 'none' }}>Crear mi primer evento</Link>
             </div>
