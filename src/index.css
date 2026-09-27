@@ -12,7 +12,13 @@
 }
 
 .crear-panel .encabezado .subtitulo {
-  max-width: 720px;
+  max-width: 620px;
+}
+
+.crear-encabezado-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
 }
 
 .crear-encabezado-lateral {
@@ -207,7 +213,9 @@
 }
 
 .crear-tiempo {
-  min-width: 82px;
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: 100%;
   padding: .45rem .65rem;
   border: 1px solid #d9eee7;
   border-radius: 10px;
@@ -227,7 +235,8 @@
   margin-top: .2rem;
   color: #687676;
   font-size: .75rem;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .crear-resumen-acciones {
@@ -252,14 +261,16 @@
 }
 
 .crear-boton {
-  min-height: auto;
-  padding: .55rem .85rem;
+  min-width: 126px;
+  min-height: 36px;
+  padding: .45rem .7rem;
   border-radius: 10px;
   background: #08734f;
   color: #fff;
   font: inherit;
-  font-size: .9rem;
+  font-size: .84rem;
   font-weight: 700;
+  line-height: 1.25;
   box-shadow: 0 4px 10px #08734f22;
 }
 
@@ -414,6 +425,89 @@ button:disabled {
   width: 100%;
   margin: 2rem 0;
   text-align: center;
+}
+
+.hoy-titulo-fila {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+}
+
+.hoy-regla-ayuda {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  margin-top: .3rem;
+  padding: 0;
+  border: 1px solid #8aa79b;
+  border-radius: 50%;
+  background: #fff;
+  color: #17684f;
+  font-size: .82rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.hoy-regla-ayuda:hover,
+.hoy-regla-ayuda:focus-visible {
+  border-color: #17684f;
+  outline: 2px solid #17684f33;
+  outline-offset: 2px;
+}
+
+.hoy-regla-tooltip {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 10px);
+  left: 0;
+  width: min(340px, calc(100vw - 2rem));
+  padding: .75rem .85rem;
+  border-radius: 8px;
+  background: #173b30;
+  box-shadow: 0 5px 16px #142b242e;
+  color: #fff;
+  font-size: .86rem;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .15s ease;
+}
+
+.hoy-regla-ayuda:hover .hoy-regla-tooltip,
+.hoy-regla-ayuda:focus-visible .hoy-regla-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.hoy-tarea-vencidas {
+  background: #fff5f3;
+}
+
+.hoy-tarea-hoy {
+  background: #fffaf0;
+}
+
+.hoy-prioridad {
+  flex: 0 0 auto;
+  padding: .3rem .55rem;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 750;
+}
+
+.hoy-prioridad-urgente {
+  background: #ffe5e1;
+  color: #9b2a24;
+}
+
+.hoy-prioridad-hoy {
+  background: #fff0c2;
+  color: #73520b;
 }
 
 .state-action {

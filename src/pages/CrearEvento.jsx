@@ -181,7 +181,7 @@ export default function CrearEvento() {
 return (
   <main className="panel crear-panel">
     <header className="encabezado">
-      <div>
+      <div className="crear-encabezado-copy">
         <p className="eyebrow">Ritmo consciente · Planificación</p>
         <h1>Crear nuevo evento</h1>
         <p className="subtitulo">

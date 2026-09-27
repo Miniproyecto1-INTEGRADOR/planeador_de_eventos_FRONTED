@@ -70,7 +70,7 @@ export default function HoyPage({ onLogout }) {
     cargarDatos()
   }, [])
 
-  const renderLista = (titulo, items) => (
+  const renderLista = (titulo, items, grupo) => (
     <div style={cardStyle}>
       <h2 style={{ marginBottom: '1rem' }}>{titulo}</h2>
       {items.length === 0 ? (
@@ -83,6 +83,7 @@ export default function HoyPage({ onLogout }) {
               return (
             <div
               key={item.id}
+              className={`hoy-tarea hoy-tarea-${grupo}`}
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -100,6 +101,8 @@ export default function HoyPage({ onLogout }) {
                   Tarea: {item.title} · {item.target_date || 'Sin fecha'} · {item.estimated_minutes} min
                 </div>
               </div>
+              {grupo === 'vencidas' && <span className="hoy-prioridad hoy-prioridad-urgente">Atención inmediata</span>}
+              {grupo === 'hoy' && <span className="hoy-prioridad hoy-prioridad-hoy">Vence hoy</span>}
               <Link
                 to="/evento/subtareas"
                 onClick={() => sessionStorage.setItem('selectedEventId', item.event_id)}
@@ -134,7 +137,20 @@ export default function HoyPage({ onLogout }) {
           <p style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#08734f', fontWeight: 700 }}>
             Sprint 1 · Hoy
           </p>
-          <h1 style={{ margin: '0.4rem 0 0' }}>Tu plan del día</h1>
+          <div className="hoy-titulo-fila">
+            <h1 style={{ margin: '0.4rem 0 0' }}>Tu plan del día</h1>
+            <button
+              type="button"
+              className="hoy-regla-ayuda"
+              aria-label="Cómo se ordenan las tareas"
+              aria-describedby="hoy-regla-tooltip"
+            >
+              <span aria-hidden="true">i</span>
+              <span className="hoy-regla-tooltip" id="hoy-regla-tooltip" role="tooltip">
+                Primero van las vencidas, después las que vencen hoy y luego las próximas. En cada grupo, se ordena por fecha límite más antigua y, si coincide, por menor duración.
+              </span>
+            </button>
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <Link
@@ -175,9 +191,9 @@ export default function HoyPage({ onLogout }) {
           </div>
         ) : (
           <>
-          {renderLista('Vencidas', data.vencidas)}
-          {renderLista('Para hoy', data.hoy)}
-          {renderLista('Próximas', data.proximas)}
+            {renderLista('Vencidas', data.vencidas, 'vencidas')}
+            {renderLista('Para hoy', data.hoy, 'hoy')}
+            {renderLista('Próximas', data.proximas, 'proximas')}
           </>
         )
       )}
