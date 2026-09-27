@@ -122,6 +122,8 @@ export default function CrearEvento() {
       return
     }
 
+    const fechaEvento = evento.event_date.slice(0, 10)
+
     const subtareasConContenido = subtareas.filter(
       (item) => item.title.trim() || item.target_date || item.estimated_hours,
     )
@@ -135,6 +137,11 @@ export default function CrearEvento() {
     }
     if (subtareasValidas.length !== subtareasConContenido.length) {
       setError('Completa el título y el tiempo estimado de cada gestión que hayas comenzado.')
+      return
+    }
+    const subtareaPosterior = subtareasValidas.find((tarea) => tarea.target_date && tarea.target_date > fechaEvento)
+    if (subtareaPosterior) {
+      setError(`La fecha de "${subtareaPosterior.title.trim()}" no puede ser posterior a la fecha del evento.`)
       return
     }
 
@@ -383,6 +390,7 @@ return (
               <input
                 id={`fecha-${index}`}
                 type="date"
+                max={evento.event_date ? evento.event_date.slice(0, 10) : undefined}
                 value={tarea.target_date}
                 onChange={(event) =>
                   actualizarSubtarea(

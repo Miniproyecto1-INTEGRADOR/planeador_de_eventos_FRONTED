@@ -28,7 +28,10 @@ const baseButton = {
 
 export default function HoyPage({ onLogout }) {
   const [data, setData] = useState({ vencidas: [], hoy: [], proximas: [] })
+  const [eventos, setEventos] = useState([])
   const [nombresEventos, setNombresEventos] = useState({})
+  const [filtroEvento, setFiltroEvento] = useState('')
+  const [filtroEstado, setFiltroEstado] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -36,29 +39,16 @@ export default function HoyPage({ onLogout }) {
     setLoading(true)
     setError('')
     try {
-      const respuesta = await axios.get(`${API_URL}/hoy/`)
+      const [respuesta, eventosRespuesta] = await Promise.all([
+        axios.get(`${API_URL}/hoy/`),
+        axios.get(`${API_URL}/eventos/`),
+      ])
       setData(respuesta.data)
-
-      const tareas = [
-        ...(respuesta.data.vencidas || []),
-        ...(respuesta.data.hoy || []),
-        ...(respuesta.data.proximas || []),
-      ]
-      const idsEventos = [...new Set(tareas.map((item) => item.event_id).filter(Boolean))]
-      const nombresRespuesta = await Promise.all(
-        idsEventos.map(async (eventId) => {
-          try {
-            const eventoRespuesta = await axios.get(`${API_URL}/eventos/${eventId}/`)
-            return [eventId, {
-              name: eventoRespuesta.data.name,
-              color: eventoRespuesta.data.color || '#1d7a5f',
-            }]
-          } catch {
-            return [eventId, { name: 'Evento', color: '#1d7a5f' }]
-          }
-        }),
-      )
-      setNombresEventos(Object.fromEntries(nombresRespuesta))
+      setEventos(eventosRespuesta.data)
+      setNombresEventos(Object.fromEntries(eventosRespuesta.data.map((evento) => [
+        evento.id,
+        { name: evento.name, color: evento.color || '#1d7a5f' },
+      ])))
     } catch {
       setError('No pudimos cargar tus tareas de hoy.')
     } finally {
@@ -120,6 +110,14 @@ export default function HoyPage({ onLogout }) {
   )
 
   const totalGestiones = data.vencidas.length + data.hoy.length + data.proximas.length
+  const grupos = ['vencidas', 'hoy', 'proximas']
+  const gruposFiltrados = grupos
+    .filter((grupo) => !filtroEstado || filtroEstado === grupo)
+    .map((grupo) => [
+      grupo,
+      data[grupo].filter((tarea) => !filtroEvento || String(tarea.event_id) === filtroEvento),
+    ])
+  const totalFiltradas = gruposFiltrados.reduce((total, [, tareas]) => total + tareas.length, 0)
 
   return (
     <main style={panelStyle}>
@@ -147,12 +145,19 @@ export default function HoyPage({ onLogout }) {
             >
               <span aria-hidden="true">i</span>
               <span className="hoy-regla-tooltip" id="hoy-regla-tooltip" role="tooltip">
-                Primero van las vencidas, después las que vencen hoy y luego las próximas. En cada grupo, se ordena por fecha límite más antigua y, si coincide, por menor duración.
+              <p>¿Cómo se ordenan las tareas?</p>
+              Primero van las vencidas, después las que vencen hoy y luego las próximas. En cada grupo, se ordena por fecha límite, más antigua y, si coincide, por menor duración.
               </span>
             </button>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Link
+            to="/progreso"
+            style={{ ...baseButton, background: '#edf2f3', color: '#243434', textDecoration: 'none' }}
+          >
+            Todos los eventos
+          </Link>
           <Link
             to="/crear"
             style={{ ...baseButton, background: '#1d7a5f', color: '#fff', textDecoration: 'none' }}
@@ -169,16 +174,14 @@ export default function HoyPage({ onLogout }) {
         </div>
       </header>
 
-      {error && (
-        <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c' }} role="alert">
-          {error}
-          <button onClick={cargarDatos} style={{ ...baseButton, background: '#f3d5d2', marginLeft: '1rem' }}>
+      {error ? (
+        <div className="hoy-error" style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c' }} role="alert">
+          <span>{error}</span>
+          <button type="button" onClick={cargarDatos} style={{ ...baseButton, background: '#f3d5d2' }}>
             Reintentar
           </button>
         </div>
-      )}
-
-      {loading ? (
+      ) : loading ? (
         <div className="operativa-loading-page">
           <div style={cardStyle} className="state-loading operativa-loading-card" role="status">Estamos ordenando tus gestiones...</div>
         </div>
@@ -191,9 +194,50 @@ export default function HoyPage({ onLogout }) {
           </div>
         ) : (
           <>
-            {renderLista('Vencidas', data.vencidas, 'vencidas')}
-            {renderLista('Para hoy', data.hoy, 'hoy')}
-            {renderLista('Próximas', data.proximas, 'proximas')}
+            <section className="hoy-filtros" aria-label="Filtros de tareas">
+              <label className="hoy-filtro-campo">
+                <span>Evento</span>
+                <select value={filtroEvento} onChange={(event) => setFiltroEvento(event.target.value)}>
+                  <option value="">Todos los eventos</option>
+                  {eventos.map((evento) => (
+                    <option key={evento.id} value={evento.id}>{evento.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="hoy-filtro-campo">
+                <span>Estado</span>
+                <select value={filtroEstado} onChange={(event) => setFiltroEstado(event.target.value)}>
+                  <option value="">Todos los estados</option>
+                  <option value="vencidas">Vencidas</option>
+                  <option value="hoy">Para hoy</option>
+                  <option value="proximas">Próximas</option>
+                </select>
+              </label>
+              {(filtroEvento || filtroEstado) && (
+                <button
+                  type="button"
+                  className="hoy-filtros-limpiar"
+                  onClick={() => {
+                    setFiltroEvento('')
+                    setFiltroEstado('')
+                  }}
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </section>
+
+            {totalFiltradas === 0 ? (
+              <div className="state-empty-block hoy-filtro-vacio" role="status">
+                No hay tareas que coincidan con estos filtros.
+              </div>
+            ) : (
+              gruposFiltrados.map(([grupo, tareas]) => renderLista(
+                grupo === 'vencidas' ? 'Vencidas' : grupo === 'hoy' ? 'Para hoy' : 'Próximas',
+                tareas,
+                grupo,
+              ))
+            )}
           </>
         )
       )}

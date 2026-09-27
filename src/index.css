@@ -510,6 +510,81 @@ button:disabled {
   color: #73520b;
 }
 
+.hoy-filtros {
+  display: flex;
+  align-items: end;
+  gap: .85rem;
+  flex-wrap: wrap;
+  margin: 1rem 0 1.25rem;
+  padding: 1rem;
+  border: 1px solid #e1e9e7;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.hoy-filtro-campo {
+  display: grid;
+  gap: .35rem;
+  min-width: min(220px, 100%);
+  color: #394747;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.hoy-filtro-campo select {
+  min-height: 40px;
+  padding: .5rem .7rem;
+  border: 1px solid #d5dfdd;
+  border-radius: 8px;
+  background: #fff;
+  color: #253030;
+  font: inherit;
+  font-weight: 500;
+}
+
+.hoy-filtro-campo select:focus-visible,
+.hoy-filtros-limpiar:focus-visible {
+  outline: 2px solid #08734f;
+  outline-offset: 2px;
+}
+
+.hoy-filtros-limpiar {
+  min-height: 40px;
+  padding: .5rem .75rem;
+  border: 1px solid #d5dfdd;
+  border-radius: 8px;
+  background: #f5f8f7;
+  color: #315247;
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.hoy-filtro-vacio {
+  padding: 1rem;
+  border-radius: 8px;
+  background: #fff;
+  text-align: center;
+}
+
+.hoy-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.hoy-error button {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+@media (max-width: 520px) {
+  .hoy-error {
+    flex-wrap: wrap;
+  }
+}
+
 .state-action {
   display: inline-block;
   padding: .7rem 1rem;
