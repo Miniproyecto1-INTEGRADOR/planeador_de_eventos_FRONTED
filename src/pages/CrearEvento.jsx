@@ -134,7 +134,16 @@ export default function CrearEvento() {
       return
     }
     if (subtareasValidas.length !== subtareasConContenido.length) {
-      setError('Completa el título y el tiempo estimado de cada gestión que hayas comenzado.')
+      const faltaTitulo = subtareasConContenido.some((item) => !item.title.trim())
+      const faltaHorasValidas = subtareasConContenido.some((item) => Number(item.estimated_hours) <= 0)
+
+      if (faltaTitulo && faltaHorasValidas) {
+        setError('Completa el título y asigna un número de horas mayor a 0 en cada gestión que hayas comenzado.')
+      } else if (faltaTitulo) {
+        setError('Completa el título de cada gestión que hayas comenzado.')
+      } else {
+        setError('Asigna un número de horas mayor a 0 en cada gestión que hayas comenzado.')
+      }
       return
     }
 

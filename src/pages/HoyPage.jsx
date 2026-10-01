@@ -3,32 +3,29 @@ import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
 
-const panelStyle = {
-  maxWidth: 1100,
-  margin: '0 auto',
-  padding: '2rem 1rem 4rem',
-  fontFamily: 'Inter, sans-serif',
-}
+const grupos = [
+  ['vencidas', 'Vencidas'],
+  ['hoy', 'Para hoy'],
+  ['proximas', 'Próximas'],
+]
 
-const cardStyle = {
-  background: '#fff',
-  borderRadius: 16,
-  padding: '1.25rem',
-  boxShadow: '0 4px 18px rgba(13, 26, 26, 0.08)',
-  marginBottom: '1rem',
-}
+const estados = [
+  ['pending', 'Pendiente'],
+  ['postponed', 'Pospuesta'],
+  ['done', 'Completada'],
+]
 
-const baseButton = {
-  border: 'none',
-  borderRadius: 10,
-  padding: '0.7rem 1rem',
-  fontWeight: 700,
-  cursor: 'pointer',
+const fechaCorta = (value) => {
+  if (!value) return 'Sin fecha'
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number)
+  return new Intl.DateTimeFormat('es-MX', { day: '2-digit', month: 'short' }).format(new Date(year, month - 1, day))
 }
 
 export default function HoyPage({ onLogout }) {
   const [data, setData] = useState({ vencidas: [], hoy: [], proximas: [] })
-  const [nombresEventos, setNombresEventos] = useState({})
+  const [eventos, setEventos] = useState([])
+  const [eventoFiltro, setEventoFiltro] = useState('todos')
+  const [estadoFiltro, setEstadoFiltro] = useState('todos')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -36,29 +33,22 @@ export default function HoyPage({ onLogout }) {
     setLoading(true)
     setError('')
     try {
-      const respuesta = await axios.get(`${API_URL}/hoy/`)
-      setData(respuesta.data)
+      const [eventosRespuesta, ...respuestas] = await Promise.all([
+        axios.get(`${API_URL}/eventos/`),
+        ...estados.map(([status]) => axios.get(`${API_URL}/hoy/`, { params: { status } })),
+      ])
+      const agrupadas = { vencidas: [], hoy: [], proximas: [] }
 
-      const tareas = [
-        ...(respuesta.data.vencidas || []),
-        ...(respuesta.data.hoy || []),
-        ...(respuesta.data.proximas || []),
-      ]
-      const idsEventos = [...new Set(tareas.map((item) => item.event_id).filter(Boolean))]
-      const nombresRespuesta = await Promise.all(
-        idsEventos.map(async (eventId) => {
-          try {
-            const eventoRespuesta = await axios.get(`${API_URL}/eventos/${eventId}/`)
-            return [eventId, {
-              name: eventoRespuesta.data.name,
-              color: eventoRespuesta.data.color || '#1d7a5f',
-            }]
-          } catch {
-            return [eventId, { name: 'Evento', color: '#1d7a5f' }]
-          }
-        }),
-      )
-      setNombresEventos(Object.fromEntries(nombresRespuesta))
+      respuestas.forEach(({ data: resumen }) => {
+        grupos.forEach(([key]) => agrupadas[key].push(...(resumen[key] || [])))
+      })
+      Object.values(agrupadas).forEach((tareas) => tareas.sort((a, b) =>
+        (a.target_date || '9999-12-31').localeCompare(b.target_date || '9999-12-31') ||
+        Number(a.estimated_minutes || 0) - Number(b.estimated_minutes || 0),
+      ))
+
+      setEventos(eventosRespuesta.data)
+      setData(agrupadas)
     } catch {
       setError('No pudimos cargar tus tareas de hoy.')
     } finally {
@@ -70,117 +60,93 @@ export default function HoyPage({ onLogout }) {
     cargarDatos()
   }, [])
 
-  const renderLista = (titulo, items) => (
-    <div style={cardStyle}>
-      <h2 style={{ marginBottom: '1rem' }}>{titulo}</h2>
-      {items.length === 0 ? (
-        <p className="state-empty">No hay gestiones en este bloque. Tu agenda está despejada por ahora.</p>
-      ) : (
-        <div style={{ display: 'grid', gap: '0.75rem' }}>
-          {items.map((item) => (
-            (() => {
-              const eventoInfo = nombresEventos[item.event_id] || { name: 'Evento', color: '#1d7a5f' }
-              return (
-            <div
-              key={item.id}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: '1rem',
-                alignItems: 'center',
-                border: '1px solid #e7ecec',
-                borderLeft: `5px solid ${eventoInfo.color}`,
-                borderRadius: 12,
-                padding: '0.8rem 1rem',
-              }}
-            >
-              <div>
-                <strong>{item.event_name || item.event?.name || item.event_title || eventoInfo.name}</strong>
-                <div style={{ color: '#586464', fontSize: '0.9rem', marginTop: 4 }}>
-                  Tarea: {item.title} · {item.target_date || 'Sin fecha'} · {item.estimated_minutes} min
-                </div>
-              </div>
-              <Link
-                to="/evento/subtareas"
-                onClick={() => sessionStorage.setItem('selectedEventId', item.event_id)}
-                style={{ ...baseButton, background: '#eaf8f1', color: '#0d5c3f', textDecoration: 'none' }}
-              >
-                Ver detalle
-              </Link>
-            </div>
-              )
-            })()
-          ))}
-        </div>
-      )}
-    </div>
+  const eventosPorId = Object.fromEntries(eventos.map((evento) => [evento.id, evento]))
+  const tareasVisibles = (key) => data[key].filter((tarea) =>
+    (eventoFiltro === 'todos' || tarea.event_id === eventoFiltro) &&
+    (estadoFiltro === 'todos' || tarea.status === estadoFiltro),
   )
-
-  const totalGestiones = data.vencidas.length + data.hoy.length + data.proximas.length
+  const total = grupos.reduce((sum, [key]) => sum + tareasVisibles(key).length, 0)
+  const totalGeneral = grupos.reduce((sum, [key]) => sum + data[key].length, 0)
+  const hoy = new Intl.DateTimeFormat('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
 
   return (
-    <main style={panelStyle}>
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '1rem',
-          marginBottom: '1rem',
-          flexWrap: 'wrap',
-        }}
-      >
-        <div>
-          <p style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#08734f', fontWeight: 700 }}>
-            Sprint 1 · Hoy
-          </p>
-          <h1 style={{ margin: '0.4rem 0 0' }}>Tu plan del día</h1>
-        </div>
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <Link
-            to="/crear"
-            style={{ ...baseButton, background: '#1d7a5f', color: '#fff', textDecoration: 'none' }}
-          >
-            Crear evento
-          </Link>
-          <button
-            type="button"
-            onClick={onLogout}
-            style={{ ...baseButton, background: '#ffe5e1', color: '#9b2a24' }}
-          >
-            Cerrar sesión
-          </button>
-        </div>
-      </header>
+    <main className="today-app">
+      <aside className="today-sidebar">
+        <Link className="today-logo" to="/hoy" aria-label="Eventos al Día, inicio"><img src="/Logo.png" alt="Eventos al Día" /></Link>
+        <nav aria-label="Navegación principal">
+          <p>Tu espacio</p>
+          <Link className="active" to="/hoy"><span>01</span>Hoy</Link>
+          <Link to="/progreso"><span>02</span>Progreso</Link>
+        </nav>
+        <button className="today-logout" type="button" onClick={onLogout}>Cerrar sesión</button>
+      </aside>
 
-      {error && (
-        <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c' }} role="alert">
-          {error}
-          <button onClick={cargarDatos} style={{ ...baseButton, background: '#f3d5d2', marginLeft: '1rem' }}>
-            Reintentar
-          </button>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="operativa-loading-page">
-          <div style={cardStyle} className="state-loading operativa-loading-card" role="status">Estamos ordenando tus gestiones...</div>
-        </div>
-      ) : (
-        totalGestiones === 0 ? (
-          <div style={{ ...cardStyle, background: '#edfaf3', borderLeft: '4px solid #1d7a5f' }} className="state-empty-block hoy-empty-block">
-            <strong>Tu plan comienza aquí</strong>
-            <p>Aún no tienes gestiones. Crea tu primer evento para comenzar.</p>
-            <Link to="/crear" style={{ ...baseButton, background: '#1d7a5f', color: '#fff', textDecoration: 'none' }}>Crear mi primer evento</Link>
+      <section className="today-content">
+        <header className="today-heading">
+          <div>
+            <p>{hoy}</p>
+            <h1>Hoy</h1>
+            <span>Gestiona y planifica tus eventos</span>
           </div>
-        ) : (
-          <>
-          {renderLista('Vencidas', data.vencidas)}
-          {renderLista('Para hoy', data.hoy)}
-          {renderLista('Próximas', data.proximas)}
-          </>
-        )
-      )}
+          <Link className="today-create" to="/crear"><span aria-hidden="true">+</span>Crear evento</Link>
+        </header>
+
+        <section className="today-filters" aria-label="Filtros de tareas">
+          <label>Evento
+            <select value={eventoFiltro} onChange={(event) => setEventoFiltro(event.target.value)}>
+              <option value="todos">Todos los eventos</option>
+              {eventos.map((evento) => <option key={evento.id} value={evento.id}>{evento.name}</option>)}
+            </select>
+          </label>
+          <label>Estado
+            <select value={estadoFiltro} onChange={(event) => setEstadoFiltro(event.target.value)}>
+              <option value="todos">Todos los estados</option>
+              {estados.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </label>
+          <p><strong>{total}</strong> gestiones</p>
+        </section>
+
+        {error && <div className="today-error" role="alert">{error}<button type="button" onClick={cargarDatos}>Reintentar</button></div>}
+        {loading ? (
+          <p className="today-message" role="status">Cargando tareas...</p>
+        ) : !error && total === 0 ? (
+          <div className="today-empty">
+            <span>{totalGeneral ? '—' : '0'}</span>
+            <div>
+              <strong>{totalGeneral ? 'No hay tareas con estos filtros' : 'Tu agenda está despejada'}</strong>
+              <p>{totalGeneral ? 'Prueba con otro evento o estado.' : 'Crea un evento para comenzar tu planificación.'}</p>
+            </div>
+            {totalGeneral ? (
+              <button type="button" onClick={() => { setEventoFiltro('todos'); setEstadoFiltro('todos') }}>Limpiar filtros</button>
+            ) : <Link className="today-create" to="/crear">Crear mi primer evento</Link>}
+          </div>
+        ) : !error && (
+          <div className="today-groups">
+            {grupos.map(([key, title]) => {
+              const tareas = tareasVisibles(key)
+              return (
+                <section className="today-group" key={key}>
+                  <header><h2>{title}</h2><span>{String(tareas.length).padStart(2, '0')}</span></header>
+                  {tareas.length ? tareas.map((tarea) => {
+                    const nombre = tarea.event_name || tarea.event?.name || eventosPorId[tarea.event_id]?.name || 'Evento'
+                    const estado = estados.find(([value]) => value === tarea.status)?.[1] || 'Pendiente'
+                    return (
+                      <article className="today-task" key={tarea.id}>
+                        <time dateTime={tarea.target_date || undefined}>{fechaCorta(tarea.target_date)}</time>
+                        <div className="today-task-name"><span>{nombre}</span><strong>{tarea.title}</strong></div>
+                        <span className={`today-status status-${tarea.status}`}>{estado}</span>
+                        <span className="today-minutes">{tarea.estimated_minutes || 0} min</span>
+                        <Link to="/evento/subtareas" onClick={() => sessionStorage.setItem('selectedEventId', tarea.event_id)}>Ver detalle</Link>
+                      </article>
+                    )
+                  }) : <p className="today-no-tasks">No hay gestiones en este bloque.</p>}
+                </section>
+              )
+            })}
+          </div>
+        )}
+      </section>
     </main>
   )
 }

@@ -73,29 +73,37 @@ export default function ProgresoPage() {
               <Link to="/crear" className="state-action">Crear evento</Link>
             </div>
           ) : (
-            eventos.map((evento) => (
-              <div key={evento.id} style={cardStyle}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-                  <div>
-                    <h2 style={{ margin: 0 }}>{evento.name}</h2>
-                    <div style={{ color: '#586464' }}>{evento.event_type}</div>
+            eventos.map((evento) => {
+              const porcentaje = Math.round(Math.min(100, Math.max(0, evento.progreso.percent || 0)))
+              return (
+                <article key={evento.id} className="progress-event-card">
+                  <header className="progress-event-heading">
+                    <div>
+                      <h2>{evento.name}</h2>
+                      <span>{evento.event_type}</span>
+                    </div>
+                    <Link to="/evento/subtareas" onClick={() => sessionStorage.setItem('selectedEventId', evento.id)}>
+                      Ver detalle <span aria-hidden="true">↗</span>
+                    </Link>
+                  </header>
+                  <div className="progress-event-summary">
+                    <span>{evento.progreso.done} de {evento.progreso.total} gestiones completadas</span>
+                    <strong>{porcentaje}%</strong>
                   </div>
-                  <Link to="/evento/subtareas" onClick={() => sessionStorage.setItem('selectedEventId', evento.id)} style={{ color: '#0d5c3f', fontWeight: 700, textDecoration: 'none' }}>Ver detalle</Link>
-                </div>
-                <div className="progreso-evento">
-                  <div className="progreso-circulo" style={{ '--progreso-grados': `${evento.progreso.percent * 3.6}deg` }} role="img" aria-label={`${evento.progreso.percent}% completado`}>
-                    <strong>{evento.progreso.percent}%</strong>
+                  <div
+                    className="progress-track"
+                    role="progressbar"
+                    aria-label={`Progreso de ${evento.name}`}
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow={porcentaje}
+                  >
+                    <div style={{ width: `${porcentaje}%` }} />
                   </div>
-                  <div className="progreso-detalle">
-                    <strong>{evento.progreso.done} de {evento.progreso.total} gestiones completadas</strong>
-                    <span>{evento.progreso.total === 0 ? 'Añade gestiones para comenzar el seguimiento.' : 'Cada cambio se refleja aquí automáticamente.'}</span>
-                  </div>
-                </div>
-                <div className="progreso-barra" aria-hidden="true">
-                  <div style={{ width: `${evento.progreso.percent}%` }} />
-                </div>
-              </div>
-            ))
+                  {evento.progreso.total === 0 && <p className="progress-empty-hint">Añade gestiones para comenzar el seguimiento.</p>}
+                </article>
+              )
+            })
           )}
         </div>
       )}
