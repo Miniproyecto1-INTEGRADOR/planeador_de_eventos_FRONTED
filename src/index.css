@@ -926,6 +926,237 @@
   font-weight: 700;
 }
 
+.progreso-barra {
+  height: 10px;
+  margin-top: .85rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf1f0;
+}
+
+.progreso-barra div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f5ae3d, #ff695d);
+  transition: width .35s ease;
+}
+
+.progreso-error {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-top: .85rem;
+  padding: .7rem .85rem;
+  border: 1px solid #f0aaa3;
+  border-radius: 10px;
+  background: #fff1f0;
+  color: #9b2a24;
+}
+
+.progreso-error strong {
+  display: inline-grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #d9554c;
+  color: #fff;
+}
+
+.detalle-progreso {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e7ecec;
+}
+
+.detalle-progreso-cabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #4c5a5a;
+}
+
+@media (max-width: 620px) {
+  .detalle-progreso-cabecera {
+    flex-direction: column;
+    gap: .3rem;
+  }
+}
+
+.selector-evento {
+  position: relative;
+}
+
+.selector-evento-boton {
+  display: flex;
+  width: 100%;
+  min-height: 43px;
+  align-items: center;
+  justify-content: space-between;
+  padding: .65rem .8rem;
+  border: 1px solid #d5dfdd;
+  border-radius: 9px;
+  background: #fff;
+  color: #253030;
+  text-align: left;
+}
+
+.selector-evento-boton span:last-child {
+  color: #08734f;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.selector-evento-opciones {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + .35rem);
+  right: 0;
+  left: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: .35rem;
+  border: 1px solid #d5dfdd;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 24px #2530301f;
+}
+
+.selector-evento-opcion {
+  display: block;
+  width: 100%;
+  padding: .65rem .7rem;
+  border-radius: 7px;
+  background: transparent;
+  color: #253030;
+  text-align: left;
+}
+
+.selector-evento-opcion:hover,
+.selector-evento-opcion:focus-visible,
+.selector-evento-opcion.seleccionada {
+  background: #edfaf3;
+  color: #08734f;
+}
+
+.crear-agregar-subtarea,
+.crear-quitar-subtarea {
+  min-height: 40px;
+  padding: .6rem .85rem;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.detalle-progreso {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e7ecec;
+}
+
+.detalle-progreso-cabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #4c5a5a;
+}
+
+@media (max-width: 620px) {
+  .progreso-evento {
+    align-items: flex-start;
+  }
+
+  .detalle-progreso-cabecera {
+    flex-direction: column;
+    gap: .3rem;
+  }
+}
+
+@media (max-width: 620px) {
+  .auth-panel {
+    margin: 2rem 1rem;
+  }
+}
+
+.selector-evento {
+  position: relative;
+}
+
+.selector-evento-boton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 43px;
+  padding: .65rem .8rem;
+  border: 1px solid #d5dfdd;
+  border-radius: 9px;
+  background: #fff;
+  color: #253030;
+  text-align: left;
+}
+
+.selector-evento-boton span:last-child {
+  color: #08734f;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.selector-evento-opciones {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + .35rem);
+  right: 0;
+  left: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: .35rem;
+  border: 1px solid #d5dfdd;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 24px #2530301f;
+  scrollbar-color: #9bbdb1 #edf3f0;
+}
+
+.selector-evento-opciones::-webkit-scrollbar {
+  width: 10px;
+}
+
+.selector-evento-opciones::-webkit-scrollbar-track {
+  border-radius: 10px;
+  background: #edf3f0;
+}
+
+.selector-evento-opciones::-webkit-scrollbar-thumb {
+  border: 2px solid #edf3f0;
+  border-radius: 10px;
+  background: #9bbdb1;
+}
+
+.selector-evento-opcion {
+  display: block;
+  width: 100%;
+  padding: .65rem .7rem;
+  border-radius: 7px;
+  background: transparent;
+  color: #253030;
+  text-align: left;
+}
+
+.selector-evento-opcion:hover,
+.selector-evento-opcion:focus-visible,
+.selector-evento-opcion.seleccionada {
+  background: #edfaf3;
+  color: #08734f;
+}
+
+.crear-agregar-subtarea,
+.crear-quitar-subtarea {
+  min-height: 40px;
+  padding: .6rem .85rem;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
 .today-empty strong {
   color: #233247;
 }

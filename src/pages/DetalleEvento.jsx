@@ -92,7 +92,7 @@ export default function DetalleEvento() {
       const progresoResponse = await axios.get(`${API_URL}/eventos/${id}/progreso`)
       setProgreso(progresoResponse.data)
     } catch (err) {
-  setProgressError(getApiErrorMessage(err, 'No pudimos cargar el avance de este evento.'))
+      setProgressError(getApiErrorMessage(err, 'No pudimos cargar el avance de este evento.'))
     } finally {
       setLoading(false)
     }
@@ -353,13 +353,14 @@ export default function DetalleEvento() {
               <strong>Avance del evento</strong>
               <span>{progreso.done} de {progreso.total} completadas · {progreso.percent}%</span>
             </div>
-            <div className="progreso-barra" aria-label={`Avance del evento: ${progreso.percent}%`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={progreso.percent}>
-              <div style={{ width: `${progreso.percent}%` }} />
-            </div>
-            {progressError && (
+            {progressError ? (
               <div className="progreso-error" role="alert">
                 <strong>!</strong>
                 <span>{progressError}</span>
+              </div>
+            ) : (
+              <div className="progreso-barra" aria-label={`Avance del evento: ${progreso.percent}%`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={progreso.percent}>
+                <div style={{ width: `${progreso.percent}%` }} />
               </div>
             )}
           </div>
