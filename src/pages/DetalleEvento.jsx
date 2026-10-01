@@ -164,6 +164,14 @@ export default function DetalleEvento() {
       setError('Escribe el nombre de la gestión que quieres organizar.')
       return
     }
+    if (!targetDate) {
+      setError('Selecciona una fecha límite para la subtarea.')
+      return
+    }
+    if (targetDate > evento.event_date.slice(0, 10)) {
+      setError('La fecha límite de la subtarea no puede ser posterior a la fecha del evento.')
+      return
+    }
     if (Number(estimatedHours) <= 0) {
       setError('Indica un tiempo estimado mayor que 0 horas.')
       return
@@ -173,7 +181,7 @@ export default function DetalleEvento() {
       await axios.post(`${API_URL}/eventos/${id}/subtareas/`, {
         title: titulo,
         description: 'Gestión logística',
-        target_date: targetDate || evento.event_date.split('T')[0],
+        target_date: targetDate,
         estimated_minutes: Number(estimatedHours) * 60,
         status: 'pending',
       })
@@ -372,7 +380,7 @@ export default function DetalleEvento() {
           <h2 style={{ marginTop: 0 }}>Agregar subtarea</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.75rem' }}>
             <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Título de la subtarea" style={{ padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
-            <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} style={{ padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
+            <input type="date" aria-label="Fecha límite de la subtarea" required max={evento.event_date.slice(0, 10)} value={targetDate} onChange={(e) => setTargetDate(e.target.value)} style={{ padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 0.25rem', border: '1px solid #dfe7e6', borderRadius: 10, background: '#fff' }}>
               <input type="number" min="0.5" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} style={{ border: 'none', outline: 'none', width: '100%', padding: '0.75rem 0.25rem 0.75rem 0.75rem', background: 'transparent' }} />
               <span style={{ color: '#586464', fontWeight: 700, paddingRight: '0.75rem' }}>h</span>
@@ -412,7 +420,11 @@ export default function DetalleEvento() {
         <div className="detalle-agregar-subtarea">
           <button
             type="button"
-            onClick={() => setMostrarFormularioSubtarea(true)}
+            onClick={() => {
+              setError('')
+              setTargetDate(evento.event_date?.slice(0, 10) || '')
+              setMostrarFormularioSubtarea(true)
+            }}
             style={{ ...baseButton, background: '#1d7a5f', color: '#fff' }}
           >
             Agregar subtarea

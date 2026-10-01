@@ -122,6 +122,8 @@ export default function CrearEvento() {
       return
     }
 
+    const fechaEvento = evento.event_date.slice(0, 10)
+
     const subtareasConContenido = subtareas.filter(
       (item) => item.title.trim() || item.target_date || item.estimated_hours,
     )
@@ -144,6 +146,11 @@ export default function CrearEvento() {
       } else {
         setError('Asigna un número de horas mayor a 0 en cada gestión que hayas comenzado.')
       }
+      return
+    }
+    const subtareaPosterior = subtareasValidas.find((tarea) => tarea.target_date && tarea.target_date > fechaEvento)
+    if (subtareaPosterior) {
+      setError(`La fecha de "${subtareaPosterior.title.trim()}" no puede ser posterior a la fecha del evento.`)
       return
     }
 
@@ -190,7 +197,7 @@ export default function CrearEvento() {
 return (
   <main className="panel crear-panel">
     <header className="encabezado">
-      <div>
+      <div className="crear-encabezado-copy">
         <p className="eyebrow">Ritmo consciente · Planificación</p>
         <h1>Crear nuevo evento</h1>
         <p className="subtitulo">
@@ -392,6 +399,7 @@ return (
               <input
                 id={`fecha-${index}`}
                 type="date"
+                max={evento.event_date ? evento.event_date.slice(0, 10) : undefined}
                 value={tarea.target_date}
                 onChange={(event) =>
                   actualizarSubtarea(

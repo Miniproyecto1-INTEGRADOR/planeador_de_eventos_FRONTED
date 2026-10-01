@@ -12,7 +12,13 @@
 }
 
 .crear-panel .encabezado .subtitulo {
-  max-width: 720px;
+  max-width: 620px;
+}
+
+.crear-encabezado-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
 }
 
 .crear-encabezado-lateral {
@@ -207,7 +213,9 @@
 }
 
 .crear-tiempo {
-  min-width: 82px;
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: 100%;
   padding: .45rem .65rem;
   border: 1px solid #d9eee7;
   border-radius: 10px;
@@ -227,7 +235,8 @@
   margin-top: .2rem;
   color: #687676;
   font-size: .75rem;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .crear-resumen-acciones {
@@ -252,14 +261,16 @@
 }
 
 .crear-boton {
-  min-height: auto;
-  padding: .55rem .85rem;
+  min-width: 126px;
+  min-height: 36px;
+  padding: .45rem .7rem;
   border-radius: 10px;
   background: #08734f;
   color: #fff;
   font: inherit;
-  font-size: .9rem;
+  font-size: .84rem;
   font-weight: 700;
+  line-height: 1.25;
   box-shadow: 0 4px 10px #08734f22;
 }
 
@@ -439,6 +450,16 @@
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.4;
+}
+
+.state-action {
+  display: inline-block;
+  padding: .7rem 1rem;
+  border-radius: 10px;
+  background: #1d7a5f;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .login-form-area {
