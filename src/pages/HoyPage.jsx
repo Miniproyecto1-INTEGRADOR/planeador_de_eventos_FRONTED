@@ -72,7 +72,7 @@ export default function HoyPage({ onLogout }) {
   return (
     <main className="today-app">
       <aside className="today-sidebar">
-        <Link className="today-logo" to="/hoy" aria-label="Eventos al Día, inicio"><img src="/Logo.png" alt="Eventos al Día" /></Link>
+        <Link className="today-logo" to="/hoy" aria-label="Eventos al Día, inicio"><img src="/Logo.jpg" alt="Eventos al Día" /></Link>
         <nav aria-label="Navegación principal">
           <p>Tu espacio</p>
           <Link className="active" to="/hoy"><span>01</span>Hoy</Link>
