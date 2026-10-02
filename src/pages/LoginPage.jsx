@@ -14,14 +14,23 @@ export default function LoginPage({ onLogin, sessionNotice = '' }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    if (!email.trim() || !password) {
+
+    const trimmedEmail = email.trim()
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!trimmedEmail || !password) {
       setError('Escribe tu correo y contraseña para continuar.')
+      return
+    }
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setError('Escribe un correo válido.')
       return
     }
 
     setSaving(true)
     try {
-      const response = await axios.post(`${API_URL}/login/`, { email: email.trim(), password })
+      const response = await axios.post(`${API_URL}/login/`, { email: trimmedEmail, password })
       localStorage.setItem('authToken', response.data.token)
       localStorage.setItem('userId', response.data.user_id)
       onLogin()
@@ -38,8 +47,6 @@ export default function LoginPage({ onLogin, sessionNotice = '' }) {
       <section className="login-brand-panel" aria-label="Eventos al Día">
         <div className="login-brand-content">
           <img className="login-brand-logo" src="/Logo.png" alt="Eventos al Día" />
-          <span className="login-brand-rule" aria-hidden="true" />
-          <p>Planifica con calma.<br />Disfruta cada momento.</p>
         </div>
       </section>
       <section className="login-form-area">
