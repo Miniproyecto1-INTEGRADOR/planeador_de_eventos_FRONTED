@@ -85,7 +85,15 @@ export default function HoyPage({ onLogout }) {
         <header className="today-heading">
           <div>
             <p>{hoy}</p>
-            <h1>Hoy</h1>
+            <div className="today-title">
+              <h1>Hoy</h1>
+              <details className="today-sort-help">
+                <summary aria-label="Ver regla de ordenamiento">i</summary>
+                <div className="today-sort-tooltip">
+                  Primero van las vencidas, después las que vencen hoy y luego las próximas. En cada grupo, se ordena por fecha límite, más antigua y, si coincide, por menor duración.
+                </div>
+              </details>
+            </div>
             <span>Gestiona y planifica tus eventos</span>
           </div>
           <Link className="today-create" to="/crear"><span aria-hidden="true">+</span>Crear evento</Link>
