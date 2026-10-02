@@ -424,7 +424,7 @@
 
 .login-brand-content {
   display: flex;
-  width: min(100%, 620px);
+  width: min(100%, 500px);
   flex-direction: column;
   align-items: center;
   text-align: center;
@@ -432,9 +432,25 @@
 
 .login-brand-logo {
   display: block;
-  width: min(100%, 620px);
+  width: min(100%, 460px);
   height: auto;
   object-fit: contain;
+}
+
+.login-brand-rule {
+  width: 44px;
+  height: 3px;
+  margin: 1rem 0 .85rem;
+  border-radius: 2px;
+  background: #1d7a5f;
+}
+
+.login-brand-content p {
+  margin: 0;
+  color: #17243d;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 

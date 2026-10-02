@@ -47,6 +47,8 @@ export default function LoginPage({ onLogin, sessionNotice = '' }) {
       <section className="login-brand-panel" aria-label="Eventos al Día">
         <div className="login-brand-content">
           <img className="login-brand-logo" src="/Logo.png" alt="Eventos al Día" />
+          <div className="login-brand-rule" aria-hidden="true" />
+          <p>Planifica con calma.<br />Disfruta cada momento.</p>
         </div>
       </section>
       <section className="login-form-area">
