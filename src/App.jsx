@@ -19,7 +19,7 @@ function AppRoutes({ isAuthenticated, loginNotice, onLogin, onLogout }) {
 
   return (
     <>
-      {location.pathname !== '/login' && location.pathname !== '/hoy' && (
+      {location.pathname !== '/login' && location.pathname !== '/registro' && location.pathname !== '/hoy' && (
         <header className="brand-bar">
           <Link className="brand-lockup" to={isAuthenticated ? '/hoy' : '/login'} aria-label="Eventos al Día, inicio">
             <img src="/Logo.png" alt="Eventos al Día" />
