@@ -210,25 +210,6 @@ return (
           <span>{subtareas.length} tareas</span>
           <span>{totalTiempo} h estimadas</span>
         </div>
-
-        <div className="crear-acciones crear-acciones-superior">
-          <button
-            className="crear-boton crear-boton-secundario"
-            type="button"
-            onClick={volverAtras}
-            disabled={cargando}
-          >
-            Volver atrás
-          </button>
-          <button
-            className="crear-boton"
-            type="button"
-            onClick={guardarEvento}
-            disabled={cargando}
-          >
-            {cargando ? 'Creando evento...' : 'Crear evento'}
-          </button>
-        </div>
       </div>
     </header>
 
@@ -329,6 +310,7 @@ return (
           <div className="crear-color">
             <input
               id="color"
+              className="crear-color-picker"
               type="color"
               value={evento.color}
               onChange={(event) =>
@@ -338,6 +320,9 @@ return (
                 }))
               }
             />
+            <div className="crear-color-display" aria-hidden="true">
+              <span className="crear-color-swatch" style={{ backgroundColor: evento.color }} />
+            </div>
           </div>
         </div>
       </div>
@@ -436,10 +421,12 @@ return (
               <button
                 type="button"
                 className="crear-quitar-subtarea"
+                aria-label={`Quitar gestión ${index + 1}`}
+                title={`Quitar gestión ${index + 1}`}
                 onClick={() => eliminarSubtarea(index)}
                 disabled={cargando}
               >
-                Quitar
+                <img src="/Basura.png" alt="" aria-hidden="true" />
               </button>
             )}
           </div>

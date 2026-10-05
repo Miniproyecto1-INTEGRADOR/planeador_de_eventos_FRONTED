@@ -71,16 +71,6 @@ export default function HoyPage({ onLogout }) {
 
   return (
     <main className="today-app">
-      <aside className="today-sidebar">
-        <Link className="today-logo" to="/hoy" aria-label="Eventos al Día, inicio"><img src="/Logo.png" alt="Eventos al Día" /></Link>
-        <nav aria-label="Navegación principal">
-          <p>Tu espacio</p>
-          <Link className="active" to="/hoy"><span>01</span>Hoy</Link>
-          <Link to="/progreso"><span>02</span>Progreso</Link>
-        </nav>
-        <button className="today-logout" type="button" onClick={onLogout}>Cerrar sesión</button>
-      </aside>
-
       <section className="today-content">
         <header className="today-heading">
           <div>

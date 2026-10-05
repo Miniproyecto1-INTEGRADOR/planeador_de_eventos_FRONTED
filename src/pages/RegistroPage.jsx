@@ -46,43 +46,45 @@ export default function RegistroPage({ onLogin }) {
   }
 
   return (
-    <main className="auth-panel auth-panel-register">
-      <Link className="register-brand" to="/login" aria-label="Eventos al Día, inicio">
-        <img src="/Logo.png" alt="Eventos al Día" />
-      </Link>
-      <h1 className="register-title">Crear cuenta</h1>
-      <p className="register-intro">Registra tus datos para empezar a planear eventos.</p>
-      <form className="register-form" onSubmit={handleSubmit}>
-        <label className="register-field register-field-half">
-          <div style={{ marginBottom: 6 }}>Nombre</div>
-          <input autoComplete="given-name" required maxLength={80} value={form.first_name} onChange={update('first_name')} className="auth-input" />
-        </label>
-        <label className="register-field register-field-half">
-          <div style={{ marginBottom: 6 }}>Apellido</div>
-          <input autoComplete="family-name" required maxLength={80} value={form.last_name} onChange={update('last_name')} className="auth-input" />
-        </label>
-        <label className="register-field">
-          <div style={{ marginBottom: 6 }}>Correo electrónico</div>
-          <input type="email" autoComplete="email" required value={form.email} onChange={update('email')} className="auth-input" />
-        </label>
-        <label className="register-field">
-          <div style={{ marginBottom: 6 }}>Contraseña</div>
-          <input type="password" autoComplete="new-password" required minLength={6} maxLength={72} value={form.password} onChange={update('password')} className="auth-input" />
-        </label>
-        <label className="register-field">
-          <div style={{ marginBottom: 6 }}>Confirmar contraseña</div>
-          <input type="password" autoComplete="new-password" required minLength={6} maxLength={72} value={form.confirmPassword} onChange={update('confirmPassword')} className="auth-input" />
-        </label>
-        {error && <div className="state-message state-error" role="alert">{error}</div>}
-        {message && <div className="state-message state-success" role="status">{message}</div>}
-        <button type="submit" disabled={saving} className="auth-button">
-          {saving ? 'Creando cuenta...' : 'Registrarme'}
-        </button>
-      </form>
-      <p className="register-footer">
-        ¿Ya tienes una cuenta?{' '}
-        <Link to="/login">Inicia sesión</Link>
-      </p>
-    </main>
+    <div className="register-page">
+      <main className="auth-panel auth-panel-register">
+        <Link className="register-brand" to="/login" aria-label="Eventos al Día, inicio">
+          <img src="/Logo.png" alt="Eventos al Día" />
+        </Link>
+        <h1 className="register-title">Crear cuenta</h1>
+        <p className="register-intro">Registra tus datos para empezar a planear eventos.</p>
+        <form className="register-form" onSubmit={handleSubmit}>
+          <label className="register-field">
+            <div style={{ marginBottom: 6 }}>Nombre</div>
+            <input autoComplete="given-name" required maxLength={80} value={form.first_name} onChange={update('first_name')} className="auth-input" />
+          </label>
+          <label className="register-field">
+            <div style={{ marginBottom: 6 }}>Apellido</div>
+            <input autoComplete="family-name" required maxLength={80} value={form.last_name} onChange={update('last_name')} className="auth-input" />
+          </label>
+          <label className="register-field">
+            <div style={{ marginBottom: 6 }}>Correo electrónico</div>
+            <input type="email" autoComplete="email" required value={form.email} onChange={update('email')} className="auth-input" />
+          </label>
+          <label className="register-field">
+            <div style={{ marginBottom: 6 }}>Contraseña</div>
+            <input type="password" autoComplete="new-password" required minLength={6} maxLength={72} value={form.password} onChange={update('password')} className="auth-input" />
+          </label>
+          <label className="register-field">
+            <div style={{ marginBottom: 6 }}>Confirmar contraseña</div>
+            <input type="password" autoComplete="new-password" required minLength={6} maxLength={72} value={form.confirmPassword} onChange={update('confirmPassword')} className="auth-input" />
+          </label>
+          {error && <div className="state-message state-error" role="alert">{error}</div>}
+          {message && <div className="state-message state-success" role="status">{message}</div>}
+          <button type="submit" disabled={saving} className="auth-button">
+            {saving ? 'Creando cuenta...' : 'Registrarme'}
+          </button>
+        </form>
+        <p className="register-footer">
+          ¿Ya tienes una cuenta?{' '}
+          <Link to="/login">Inicia sesión</Link>
+        </p>
+      </main>
+    </div>
   )
 }
