@@ -349,7 +349,7 @@ export default function DetalleEvento() {
             </div>
             <div className="detalle-evento-meta-item">
               <span>Fecha</span>
-              <strong>{new Date(evento.event_date).toLocaleString()}</strong>
+              <strong>{new Date(evento.event_date).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' })}</strong>
             </div>
             <div className="detalle-evento-meta-item">
               <span>Subtareas</span>
