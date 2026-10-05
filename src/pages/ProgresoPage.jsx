@@ -81,7 +81,11 @@ export default function ProgresoPage() {
             eventos.map((evento) => {
               const porcentaje = Math.round(Math.min(100, Math.max(0, evento.progreso.percent || 0)))
               return (
-                <article key={evento.id} className="progress-event-card">
+                <article
+                  key={evento.id}
+                  className="progress-event-card"
+                  style={{ '--event-color': evento.color || '#1d7a5f' }}
+                >
                   <header className="progress-event-heading">
                     <div>
                       <h2>{evento.name}</h2>
