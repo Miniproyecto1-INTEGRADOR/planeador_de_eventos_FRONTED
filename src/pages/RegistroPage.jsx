@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { getApiErrorMessage } from '../utils/apiError.js'
+import { getRegistrationErrorMessage } from '../utils/apiError.js'
 import { API_URL } from '../utils/apiUrl.js'
 
 export default function RegistroPage({ onLogin }) {
@@ -17,6 +17,47 @@ export default function RegistroPage({ onLogin }) {
     event.preventDefault()
     setError('')
     setMessage('')
+    if (!form.first_name.trim()) {
+      setError('Escribe tu nombre para continuar.')
+      return
+    }
+    if (form.first_name.trim().length > 80) {
+      setError('El nombre no puede superar los 80 caracteres.')
+      return
+    }
+    if (!form.last_name.trim()) {
+      setError('Escribe tu apellido para continuar.')
+      return
+    }
+    if (form.last_name.trim().length > 80) {
+      setError('El apellido no puede superar los 80 caracteres.')
+      return
+    }
+    const email = form.email.trim()
+    if (!email) {
+      setError('Escribe tu correo electrónico.')
+      return
+    }
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Revisa el formato del correo electrónico e inténtalo de nuevo.')
+      return
+    }
+    if (!form.password) {
+      setError('Crea una contraseña para proteger tu cuenta.')
+      return
+    }
+    if (form.password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres.')
+      return
+    }
+    if (form.password.length > 72) {
+      setError('La contraseña no puede superar los 72 caracteres.')
+      return
+    }
+    if (!form.confirmPassword) {
+      setError('Confirma tu contraseña para continuar.')
+      return
+    }
     if (form.password !== form.confirmPassword) {
       setError('Las contraseñas no coinciden.')
       return
@@ -27,7 +68,7 @@ export default function RegistroPage({ onLogin }) {
       const response = await axios.post(`${API_URL}/registro/`, {
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
-        email: form.email.trim(),
+        email,
         password: form.password,
       })
       if (!response.data.token) {
@@ -39,7 +80,7 @@ export default function RegistroPage({ onLogin }) {
       onLogin()
       navigate('/hoy')
     } catch (err) {
-      setError(getApiErrorMessage(err, 'No se pudo crear la cuenta. Inténtalo de nuevo.'))
+      setError(getRegistrationErrorMessage(err))
     } finally {
       setSaving(false)
     }
@@ -53,7 +94,7 @@ export default function RegistroPage({ onLogin }) {
         </Link>
         <h1 className="register-title">Crear cuenta</h1>
         <p className="register-intro">Registra tus datos para empezar a planear eventos.</p>
-        <form className="register-form" onSubmit={handleSubmit}>
+        <form className="register-form" noValidate onSubmit={handleSubmit}>
           <label className="register-field">
             <div style={{ marginBottom: 6 }}>Nombre</div>
             <input autoComplete="given-name" required maxLength={80} value={form.first_name} onChange={update('first_name')} className="auth-input" />

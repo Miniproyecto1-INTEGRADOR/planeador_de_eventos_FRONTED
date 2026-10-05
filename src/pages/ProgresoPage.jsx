@@ -51,7 +51,7 @@ export default function ProgresoPage() {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <div>
           <p style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#08734f', fontWeight: 700 }}>Eventos</p>
-          <h1 style={{ margin: '0.4rem 0 0' }}>Todos los eventos</h1>
+          <h2 style={{ margin: '0.4rem 0 0' }}>Todos los eventos</h2>
         </div>
         <Link to="/hoy" style={{ padding: '.7rem 1rem', borderRadius: 10, background: '#edf2f3', color: '#243434', fontWeight: 700, textDecoration: 'none' }}>
           Volver a Hoy

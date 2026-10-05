@@ -73,6 +73,7 @@ export default function DetalleEvento() {
   const [alternativeDate, setAlternativeDate] = useState('')
   const [reducedHours, setReducedHours] = useState('0.5')
   const [overload, setOverload] = useState(null)
+  const [confirmarEliminacion, setConfirmarEliminacion] = useState(false)
 
   const cargarDatos = async () => {
     if (!id) {
@@ -200,7 +201,12 @@ export default function DetalleEvento() {
       setSuccess('Gestión añadida al plan del evento.')
       await cargarDatos()
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
+      const detail = err?.response?.data?.detail
+      if (err?.response?.status === 409 && detail?.code === 'daily_capacity_exceeded') {
+        setError(`Quedarías con ${horasDesdeMinutos(detail.planned_minutes)} planificadas (límite ${horasDesdeMinutos(detail.limit_minutes)}). Cambia la fecha o reduce las horas y vuelve a guardar.`)
+      } else {
+        setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
+      }
     } finally {
       setActionLoading('')
     }
@@ -289,11 +295,11 @@ export default function DetalleEvento() {
   }
 
   const eliminarEvento = async () => {
-    if (!window.confirm('¿Querés eliminar este evento y todas sus subtareas?')) return
     setError('')
     setActionLoading('event')
     try {
       await axios.delete(`${API_URL}/eventos/${id}`)
+      setConfirmarEliminacion(false)
       window.location.href = '/hoy'
     } catch (err) {
       setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
@@ -309,7 +315,7 @@ export default function DetalleEvento() {
     return (
       <main style={panelStyle}>
         <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c', color: '#8b2f2a' }} className="state-error" role="alert">
-          <div aria-hidden="true" style={{ fontSize: '2rem', fontWeight: 800 }}>!</div>
+          <div aria-hidden="true" style={{ fontSize: 'calc(2rem - 2px)', fontWeight: 800 }}>!</div>
           <strong>No pudimos cargar los componentes</strong>
           <p>Se perdió la conexión con el servidor, por favor vuelva a intentarlo.</p>
           <button type="button" onClick={cargarDatos} className="state-action">Reintentar</button>
@@ -335,7 +341,7 @@ export default function DetalleEvento() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <div>
           <p style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#08734f', fontWeight: 700 }}>Detalle del evento</p>
-          <h1 style={{ margin: '0.35rem 0 0' }}>{evento.name}</h1>
+          <h2 style={{ margin: '0.35rem 0 0' }}>{evento.name}</h2>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
 
@@ -344,13 +350,13 @@ export default function DetalleEvento() {
 
           <button onClick={abrirEdicion} disabled={actionLoading === 'event' || actionLoading === 'event-edit'} style={{ ...baseButton, background: '#eaf8f1', color: '#0d5c3f' }}>Editar evento</button>
 
-          <button onClick={eliminarEvento} disabled={actionLoading === 'event'} style={{ ...baseButton, background: '#ffe5e1', color: '#9b2a24' }}>{actionLoading === 'event' ? 'Eliminando...' : 'Eliminar evento'}</button>
+          <button onClick={() => { setError(''); setConfirmarEliminacion(true) }} disabled={Boolean(actionLoading)} style={{ ...baseButton, background: '#ffe5e1', color: '#9b2a24' }}>Eliminar evento</button>
         </div>
       </div>
 
       {loadError && (
         <div style={{ ...cardStyle, background: '#fff1f0', borderLeft: '4px solid #d9554c', color: '#8b2f2a' }} className="state-error" role="alert">
-          <div aria-hidden="true" style={{ fontSize: '2rem', fontWeight: 800 }}>!</div>
+          <div aria-hidden="true" style={{ fontSize: 'calc(2rem - 2px)', fontWeight: 800 }}>!</div>
           <strong>Error crítico de carga</strong>
           <p>{loadError}</p>
           <button type="button" onClick={cargarDatos} className="state-action">Reintentar</button>
@@ -463,7 +469,7 @@ export default function DetalleEvento() {
                 <div>
                   <strong>{subtask.title}</strong>
                   <div style={{ color: '#586464', marginTop: 4 }}>Fecha: {subtask.target_date || 'Sin fecha'} · {subtask.estimated_minutes} min</div>
-                  <div style={{ marginTop: 8, fontSize: '0.9rem' }}>Estado: {subtask.status === 'done' ? 'Completada' : subtask.status === 'postponed' ? 'Pospuesta' : 'Pendiente'}</div>
+                  <div style={{ marginTop: 8, fontSize: 'calc(0.9rem - 2px)' }}>Estado: {subtask.status === 'done' ? 'Completada' : subtask.status === 'postponed' ? 'Pospuesta' : 'Pendiente'}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                   <button onClick={() => abrirReprogramacion(subtask)} disabled={Boolean(actionLoading)} style={{ ...baseButton, background: '#f1f5f2', color: '#176b56' }}>Reprogramar</button>
@@ -551,6 +557,30 @@ export default function DetalleEvento() {
             )}
 
             <button type="button" className="reprogram-cancel" onClick={cerrarReprogramacion} disabled={Boolean(actionLoading)}>Cancelar</button>
+          </section>
+        </div>
+      )}
+
+      {confirmarEliminacion && (
+        <div className="reprogram-overlay">
+          <section className="reprogram-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-event-title" aria-describedby="delete-event-description">
+            <header>
+              <div>
+                <p className="eyebrow">Eliminar de tu agenda</p>
+                <h2 id="delete-event-title">¿Eliminar este evento?</h2>
+              </div>
+            </header>
+            <p className="reprogram-task-name">{evento.name}</p>
+            <p id="delete-event-description">También se eliminarán sus {subtareas.length} gestiones. Esta acción no se puede deshacer.</p>
+            {error && <p className="state-message state-error" role="alert">{error}</p>}
+            <div className="delete-event-actions">
+              <button type="button" className="reprogram-cancel" onClick={() => setConfirmarEliminacion(false)} disabled={actionLoading === 'event'}>
+                Conservar evento
+              </button>
+              <button type="button" className="delete-event-confirm" onClick={eliminarEvento} disabled={actionLoading === 'event'}>
+                {actionLoading === 'event' ? 'Eliminando…' : 'Sí, eliminar evento'}
+              </button>
+            </div>
           </section>
         </div>
       )}

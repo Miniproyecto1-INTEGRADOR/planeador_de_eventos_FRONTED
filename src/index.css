@@ -736,6 +736,7 @@
 
 .app-shell-content {
   min-width: 0;
+  font-size: 14px;
 }
 
 .today-app {
@@ -863,10 +864,10 @@
   text-transform: capitalize;
 }
 
-.today-heading h1 {
+.today-heading h2 {
   margin: 0;
   color: #182538;
-  font-size: 2.35rem;
+  font-size: 1.5em;
   line-height: 1.1;
 }
 
@@ -1218,7 +1219,7 @@
 
 .detalle-evento-meta-item strong {
   color: #233247;
-  font-size: 1rem;
+  font-size: .875rem;
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
@@ -1717,10 +1718,10 @@
   padding: 2.4rem clamp(1.2rem, 4vw, 3.2rem) 3rem;
 }
 
-.settings-page h1 {
+.settings-page h2 {
   margin: 0;
   color: #182538;
-  font-size: 2rem;
+  font-size: 1.5em;
 }
 
 .settings-page > p {
@@ -1928,6 +1929,36 @@
   font: inherit;
   font-size: .84rem;
   font-weight: 700;
+}
+
+.delete-event-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .6rem;
+  margin-top: 1rem;
+}
+
+.delete-event-actions .reprogram-cancel {
+  margin-top: 0;
+}
+
+.delete-event-confirm {
+  min-height: 38px;
+  padding: .5rem .8rem;
+  border: 0;
+  border-radius: 6px;
+  background: #9b3e36;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: .84rem;
+  font-weight: 700;
+}
+
+.delete-event-confirm:disabled {
+  cursor: wait;
+  opacity: .65;
 }
 
 @media (max-width: 520px) {

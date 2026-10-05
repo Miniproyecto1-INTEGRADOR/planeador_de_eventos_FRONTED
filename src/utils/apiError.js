@@ -85,3 +85,65 @@ export function getApiErrorMessage(error, fallback) {
 
   return fallback || friendlyServerError
 }
+
+export function getRegistrationErrorMessage(error) {
+  const connectionMessage = 'No pudimos conectar con el servicio. Revisa tu conexión e inténtalo de nuevo.'
+  const fallbackMessage = 'No pudimos crear tu cuenta. Revisa los datos e inténtalo de nuevo.'
+
+  if (!error?.response || error.code === 'ERR_NETWORK' || error.message?.toLowerCase().includes('network')) {
+    return connectionMessage
+  }
+
+  const responseData = error.response.data || {}
+  const detail = responseData.detail
+  const rawMessage = typeof detail === 'string'
+    ? detail
+    : typeof responseData.message === 'string'
+      ? responseData.message
+      : Array.isArray(detail)
+        ? detail.map((item) => typeof item === 'string' ? item : item?.msg).filter(Boolean).join(' ')
+        : ''
+  const normalized = rawMessage.toLowerCase()
+
+  if (
+    error.response.status === 409 ||
+    normalized.includes('already registered') ||
+    normalized.includes('already exists') ||
+    normalized.includes('email already') ||
+    normalized.includes('correo ya registrado') ||
+    normalized.includes('duplicate key')
+  ) {
+    return 'Ese correo ya tiene una cuenta. Inicia sesión o prueba con otro correo.'
+  }
+
+  if (
+    normalized.includes('invalid email') ||
+    normalized.includes('email address is invalid') ||
+    normalized.includes('valid email') ||
+    normalized.includes('correo válido')
+  ) {
+    return 'Revisa el formato del correo electrónico e inténtalo de nuevo.'
+  }
+
+  if (normalized.includes('at least 6 characters') || normalized.includes('at least 6 character')) {
+    return 'La contraseña debe tener al menos 6 caracteres.'
+  }
+
+  if (normalized.includes('at most 72 characters') || normalized.includes('too long')) {
+    return 'La contraseña no puede superar los 72 caracteres.'
+  }
+
+  if (normalized.includes('weak password') || normalized.includes('password is too weak') || normalized.includes('compromised')) {
+    return 'Elige una contraseña más segura y vuelve a intentarlo.'
+  }
+
+  if (error.response.status === 429 || normalized.includes('rate limit') || normalized.includes('too many requests')) {
+    return 'Espera un momento antes de intentar crear otra cuenta.'
+  }
+
+  if (error.response.status >= 500 || normalized.includes('database error') || normalized.includes('server')) {
+    return 'No pudimos completar el registro ahora. Inténtalo de nuevo en unos minutos.'
+  }
+
+  return fallbackMessage
+}

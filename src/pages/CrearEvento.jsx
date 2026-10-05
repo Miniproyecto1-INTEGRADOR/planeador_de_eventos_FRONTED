@@ -35,6 +35,8 @@ const tiposEvento = [
   'Conferencia',
 ]
 
+const horasDesdeMinutos = (minutes) => `${Number((Number(minutes || 0) / 60).toFixed(1)).toLocaleString('es-MX')} h`
+
 export default function CrearEvento() {
   const navigate = useNavigate()
   const [evento, setEvento] = useState(valoresIniciales)
@@ -42,6 +44,9 @@ export default function CrearEvento() {
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [error, setError] = useState('')
+  const [conflictoPlan, setConflictoPlan] = useState(null)
+  const [fechaAlternativaPlan, setFechaAlternativaPlan] = useState('')
+  const [horasAlternativasPlan, setHorasAlternativasPlan] = useState('')
   const [tiposAbierto, setTiposAbierto] = useState(false)
   const tiposRef = useRef(null)
 
@@ -105,7 +110,7 @@ export default function CrearEvento() {
     setSubtareas((actuales) => actuales.filter((_, pos) => pos !== index))
   }
 
-  const guardarEvento = async () => {
+  const guardarEvento = async (subtareasPlan = subtareas) => {
     setError('')
     setMensaje('')
 
@@ -124,7 +129,7 @@ export default function CrearEvento() {
 
     const fechaEvento = evento.event_date.slice(0, 10)
 
-    const subtareasConContenido = subtareas.filter(
+    const subtareasConContenido = subtareasPlan.filter(
       (item) => item.title.trim() || item.target_date || item.estimated_hours,
     )
     const subtareasValidas = subtareasConContenido.filter(
@@ -184,22 +189,52 @@ export default function CrearEvento() {
       setMensaje(mensajeExito)
       navigate('/evento/subtareas')
     } catch (err) {
-      const mensajeError = getApiErrorMessage(
-        err,
-        'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.',
-      )
-      setError(mensajeError)
+      const detail = err?.response?.data?.detail
+      if (err?.response?.status === 409 && detail?.code === 'daily_capacity_exceeded') {
+        const conflictingTask = subtareasValidas[Number(detail.subtask_index)]
+        const taskIndex = conflictingTask ? subtareasPlan.indexOf(conflictingTask) : -1
+        setFechaAlternativaPlan('')
+        setHorasAlternativasPlan(String(Math.max(0.5, Number(conflictingTask?.estimated_hours || 1) - 0.5)))
+        setConflictoPlan({ ...detail, taskIndex })
+      } else {
+        const mensajeError = getApiErrorMessage(
+          err,
+          'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.',
+        )
+        setError(mensajeError)
+      }
     } finally {
       setCargando(false)
     }
   }
+
+  const resolverConflictoPlan = async (field, value) => {
+    if (!conflictoPlan || conflictoPlan.taskIndex < 0) {
+      setError('No pudimos identificar la gestión que causa el conflicto. Revisa el plan y vuelve a intentarlo.')
+      setConflictoPlan(null)
+      return
+    }
+
+    const subtareasActualizadas = subtareas.map((tarea, index) => index === conflictoPlan.taskIndex
+      ? {
+          ...tarea,
+          [field]: field === 'estimated_hours' ? Number(value) : value,
+        }
+      : tarea,
+    )
+    setSubtareas(subtareasActualizadas)
+    setConflictoPlan(null)
+    setFechaAlternativaPlan('')
+    await guardarEvento(subtareasActualizadas)
+  }
+
 
 return (
   <main className="panel crear-panel">
     <header className="encabezado">
       <div className="crear-encabezado-copy">
         <p className="eyebrow">Ritmo consciente · Planificación</p>
-        <h1>Crear nuevo evento</h1>
+        <h2>Crear nuevo evento</h2>
         <p className="subtitulo">
           Organiza la información principal y prepara las primeras gestiones de tu evento.
         </p>
@@ -465,7 +500,7 @@ return (
             <button
               className="crear-boton"
               type="button"
-              onClick={guardarEvento}
+              onClick={() => guardarEvento()}
               disabled={cargando}
             >
               {cargando ? 'Creando evento...' : 'Crear evento'}
@@ -475,6 +510,68 @@ return (
       </div>
 
     </section>
+
+    {conflictoPlan && (
+      <div className="reprogram-overlay">
+        <section className="reprogram-dialog" role="dialog" aria-modal="true" aria-labelledby="crear-conflicto-title">
+          <header>
+            <div>
+              <p className="eyebrow">Ajuste de agenda</p>
+              <h2 id="crear-conflicto-title">Resuelve la carga de ese día</h2>
+            </div>
+          </header>
+          <p className="reprogram-task-name">{conflictoPlan.subtask_title}</p>
+          <div className="reprogram-conflict" role="alert">
+            <strong>Quedarías con {horasDesdeMinutos(conflictoPlan.planned_minutes)} planificadas (límite {horasDesdeMinutos(conflictoPlan.limit_minutes)}).</strong>
+            <p>Elige otra fecha o reduce la duración. El evento se creará cuando el plan quede dentro del límite.</p>
+          </div>
+          <div className="reprogram-options">
+            <section>
+              <h3>Mover a otro día</h3>
+              <label>
+                Nueva fecha para esta gestión
+                <input
+                  type="date"
+                  max={evento.event_date ? evento.event_date.slice(0, 10) : undefined}
+                  value={fechaAlternativaPlan}
+                  onChange={(event) => setFechaAlternativaPlan(event.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => resolverConflictoPlan('target_date', fechaAlternativaPlan)}
+                disabled={!fechaAlternativaPlan || Boolean(cargando)}
+              >
+                Guardar en esa fecha
+              </button>
+            </section>
+            <section>
+              <h3>Reducir horas</h3>
+              <label>
+                Duración estimada para esta gestión
+                <input
+                  type="number"
+                  min="0.5"
+                  step="0.5"
+                  value={horasAlternativasPlan}
+                  onChange={(event) => setHorasAlternativasPlan(event.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => resolverConflictoPlan('estimated_hours', horasAlternativasPlan)}
+                disabled={Number(horasAlternativasPlan) >= Number(subtareas[conflictoPlan.taskIndex]?.estimated_hours) || Boolean(cargando)}
+              >
+                Guardar duración reducida
+              </button>
+            </section>
+          </div>
+          <button type="button" className="reprogram-cancel" onClick={() => setConflictoPlan(null)} disabled={Boolean(cargando)}>
+            Seguir editando el evento
+          </button>
+        </section>
+      </div>
+    )}
   </main>
 )
 }

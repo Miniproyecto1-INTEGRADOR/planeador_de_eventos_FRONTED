@@ -76,7 +76,7 @@ export default function HoyPage() {
           <div>
             <p>{hoy}</p>
             <div className="today-title">
-              <h1>Hoy</h1>
+              <h2>Hoy</h2>
               <details className="today-sort-help">
                 <summary aria-label="Ver regla de ordenamiento">i</summary>
                 <div className="today-sort-tooltip">
