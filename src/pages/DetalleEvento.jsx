@@ -47,6 +47,8 @@ const tiposEvento = [
   'Conferencia',
 ]
 
+const horasDesdeMinutos = (minutes) => `${Number((Number(minutes || 0) / 60).toFixed(1)).toLocaleString('es-MX')} h`
+
 export default function DetalleEvento() {
   const { id: routeId } = useParams()
   const id = routeId || sessionStorage.getItem('selectedEventId')
@@ -65,6 +67,12 @@ export default function DetalleEvento() {
   const [progressError, setProgressError] = useState('')
   const [success, setSuccess] = useState('')
   const [actionLoading, setActionLoading] = useState('')
+  const [reprogramTask, setReprogramTask] = useState(null)
+  const [reprogramDate, setReprogramDate] = useState('')
+  const [reprogramHours, setReprogramHours] = useState('1')
+  const [alternativeDate, setAlternativeDate] = useState('')
+  const [reducedHours, setReducedHours] = useState('0.5')
+  const [overload, setOverload] = useState(null)
 
   const cargarDatos = async () => {
     if (!id) {
@@ -223,6 +231,58 @@ export default function DetalleEvento() {
       await cargarDatos()
     } catch (err) {
       setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
+    } finally {
+      setActionLoading('')
+    }
+  }
+
+  const abrirReprogramacion = (subtask) => {
+    setError('')
+    setOverload(null)
+    setAlternativeDate('')
+    setReprogramTask(subtask)
+    setReprogramDate(subtask.target_date || evento.event_date.slice(0, 10))
+    setReprogramHours(String(Number(subtask.estimated_minutes || 60) / 60))
+    setReducedHours(String(Math.max(0.5, Number(subtask.estimated_minutes || 60) / 60 - 0.5)))
+  }
+
+  const cerrarReprogramacion = () => {
+    setReprogramTask(null)
+    setOverload(null)
+    setAlternativeDate('')
+  }
+
+  const guardarReprogramacion = async (targetDate = reprogramDate, hours = reprogramHours) => {
+    if (!reprogramTask) return
+    const hoursValue = Number(hours)
+    if (!targetDate || !Number.isFinite(hoursValue) || hoursValue < 0.5) {
+      setError('Elige una fecha y una duración de al menos media hora.')
+      return
+    }
+
+    const estimatedMinutes = Math.round(hoursValue * 60)
+    setError('')
+    setSuccess('')
+    setOverload(null)
+    setActionLoading(`reprogram-${reprogramTask.id}`)
+    try {
+      await axios.patch(`${API_URL}/eventos/${id}/subtareas/${reprogramTask.id}`, {
+        target_date: targetDate,
+        estimated_minutes: estimatedMinutes,
+      })
+      cerrarReprogramacion()
+      setSuccess('Fecha y duración actualizadas. Al volver a Hoy, la gestión aparecerá en su nuevo grupo.')
+      await cargarDatos()
+    } catch (requestError) {
+      const detail = requestError?.response?.data?.detail
+      if (requestError?.response?.status === 409 && detail?.code === 'daily_capacity_exceeded') {
+        setReprogramDate(targetDate)
+        setReprogramHours(String(hoursValue))
+        setReducedHours(String(Math.max(0.5, hoursValue - 0.5)))
+        setOverload(detail)
+      } else {
+        setError(getApiErrorMessage(requestError, 'No pudimos reprogramar esta gestión.'))
+      }
     } finally {
       setActionLoading('')
     }
@@ -406,6 +466,7 @@ export default function DetalleEvento() {
                   <div style={{ marginTop: 8, fontSize: '0.9rem' }}>Estado: {subtask.status === 'done' ? 'Completada' : subtask.status === 'postponed' ? 'Pospuesta' : 'Pendiente'}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button onClick={() => abrirReprogramacion(subtask)} disabled={Boolean(actionLoading)} style={{ ...baseButton, background: '#f1f5f2', color: '#176b56' }}>Reprogramar</button>
                   <button onClick={() => cambiarEstado(subtask.id, 'done')} disabled={actionLoading === subtask.id || subtask.status === 'done'} style={{ ...baseButton, background: '#dff8ed', color: '#0f5a3a' }}>Hecha</button>
                   <button onClick={() => cambiarEstado(subtask.id, 'postponed')} disabled={actionLoading === subtask.id || subtask.status === 'postponed'} style={{ ...baseButton, background: '#eef3ff', color: '#2b4d96' }}>Posponer</button>
                   <button onClick={() => eliminarSubtarea(subtask.id)} disabled={actionLoading === subtask.id} style={{ ...baseButton, background: '#ffe5e1', color: '#9b2a24' }}>{actionLoading === subtask.id ? 'Guardando...' : 'Eliminar'}</button>
@@ -429,6 +490,68 @@ export default function DetalleEvento() {
           >
             Agregar subtarea
           </button>
+        </div>
+      )}
+
+      {reprogramTask && (
+        <div className="reprogram-overlay">
+          <section className="reprogram-dialog" role="dialog" aria-modal="true" aria-labelledby="reprogram-title">
+            <header>
+              <div>
+                <p className="eyebrow">Ajuste de agenda</p>
+                <h2 id="reprogram-title">Reprogramar gestión</h2>
+              </div>
+              <button type="button" className="reprogram-close" aria-label="Cerrar" onClick={cerrarReprogramacion}>×</button>
+            </header>
+            <p className="reprogram-task-name">{reprogramTask.title}</p>
+            <form onSubmit={(submitEvent) => { submitEvent.preventDefault(); guardarReprogramacion() }}>
+              <label>
+                Nueva fecha
+                <input type="date" required max={evento.event_date.slice(0, 10)} value={reprogramDate} onChange={(event) => setReprogramDate(event.target.value)} />
+              </label>
+              <label>
+                Duración estimada (horas)
+                <input type="number" required min="0.5" step="0.5" value={reprogramHours} onChange={(event) => setReprogramHours(event.target.value)} />
+              </label>
+              {error && <p className="state-message state-error" role="alert">{error}</p>}
+              <button className="reprogram-primary" type="submit" disabled={Boolean(actionLoading)}>
+                {actionLoading ? 'Comprobando…' : overload ? 'Volver a comprobar' : 'Guardar reprogramación'}
+              </button>
+            </form>
+
+            {overload && (
+              <>
+                <div className="reprogram-conflict" role="alert">
+                  <strong>Quedarías con {horasDesdeMinutos(overload.planned_minutes)} planificadas (límite {horasDesdeMinutos(overload.limit_minutes)}).</strong>
+                  <p>Elige otra fecha o reduce la duración para mantener un ritmo viable.</p>
+                </div>
+                <div className="reprogram-options">
+                  <section>
+                    <h3>Mover a otro día</h3>
+                    <label>
+                      Fecha alternativa
+                      <input type="date" max={evento.event_date.slice(0, 10)} value={alternativeDate} onChange={(event) => setAlternativeDate(event.target.value)} />
+                    </label>
+                    <button type="button" onClick={() => guardarReprogramacion(alternativeDate, reprogramHours)} disabled={!alternativeDate || alternativeDate === reprogramDate || Boolean(actionLoading)}>
+                      Guardar en esa fecha
+                    </button>
+                  </section>
+                  <section>
+                    <h3>Reducir horas</h3>
+                    <label>
+                      Nueva duración
+                      <input type="number" min="0.5" step="0.5" value={reducedHours} onChange={(event) => setReducedHours(event.target.value)} />
+                    </label>
+                    <button type="button" onClick={() => guardarReprogramacion(reprogramDate, reducedHours)} disabled={Number(reducedHours) >= Number(reprogramHours) || Boolean(actionLoading)}>
+                      Guardar duración reducida
+                    </button>
+                  </section>
+                </div>
+              </>
+            )}
+
+            <button type="button" className="reprogram-cancel" onClick={cerrarReprogramacion} disabled={Boolean(actionLoading)}>Cancelar</button>
+          </section>
         </div>
       )}
     </main>

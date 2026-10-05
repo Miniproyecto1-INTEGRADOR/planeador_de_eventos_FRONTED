@@ -21,7 +21,7 @@ const fechaCorta = (value) => {
   return new Intl.DateTimeFormat('es-MX', { day: '2-digit', month: 'short' }).format(new Date(year, month - 1, day))
 }
 
-export default function HoyPage({ onLogout }) {
+export default function HoyPage() {
   const [data, setData] = useState({ vencidas: [], hoy: [], proximas: [] })
   const [eventos, setEventos] = useState([])
   const [eventoFiltro, setEventoFiltro] = useState('todos')

@@ -7,6 +7,7 @@ import DetalleEvento from './pages/DetalleEvento.jsx'
 import ProgresoPage from './pages/ProgresoPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegistroPage from './pages/RegistroPage.jsx'
+import ConfiguracionPage from './pages/ConfiguracionPage.jsx'
 
 const AUTH_SESSION_VERSION = 'supabase-auth-v1'
 
@@ -18,6 +19,7 @@ function AppShell({ onLogout, children }) {
   const location = useLocation()
   const isHoy = location.pathname === '/hoy'
   const isProgreso = location.pathname === '/progreso'
+  const isConfiguracion = location.pathname === '/configuracion'
 
   return (
     <div className="app-shell">
@@ -27,6 +29,7 @@ function AppShell({ onLogout, children }) {
           <p>Tu espacio</p>
           <Link className={isHoy ? 'active' : ''} to="/hoy"><span>01</span>Hoy</Link>
           <Link className={isProgreso ? 'active' : ''} to="/progreso"><span>02</span>Progreso</Link>
+          <Link className={isConfiguracion ? 'active' : ''} to="/configuracion"><span>03</span>Configuración</Link>
         </nav>
         <button className="today-logout" type="button" onClick={onLogout}>
           <img src="/Cerrar sesión.png" alt="" aria-hidden="true" />
@@ -42,7 +45,7 @@ function AppRoutes({ isAuthenticated, loginNotice, onLogin, onLogout }) {
   const location = useLocation()
 
   const showStandaloneLogo = !['/login', '/registro'].includes(location.pathname)
-    && !['/hoy', '/crear', '/progreso'].includes(location.pathname)
+    && !['/hoy', '/crear', '/progreso', '/configuracion'].includes(location.pathname)
     && !location.pathname.startsWith('/evento/')
 
   return (
@@ -62,6 +65,7 @@ function AppRoutes({ isAuthenticated, loginNotice, onLogin, onLogout }) {
         <Route path="/evento/subtareas" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><DetalleEvento /></AppShell></ProtectedRoute>} />
         <Route path="/evento/:id" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><DetalleEvento /></AppShell></ProtectedRoute>} />
         <Route path="/progreso" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><ProgresoPage /></AppShell></ProtectedRoute>} />
+        <Route path="/configuracion" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><ConfiguracionPage /></AppShell></ProtectedRoute>} />
         <Route path="*" element={<Navigate to={isAuthenticated ? '/hoy' : '/login'} replace />} />
       </Routes>
     </>
