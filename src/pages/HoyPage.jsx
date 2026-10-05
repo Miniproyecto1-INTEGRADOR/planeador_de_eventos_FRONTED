@@ -116,13 +116,17 @@ export default function HoyPage({ onLogout }) {
             {grupos.map(([key, title]) => {
               const tareas = tareasVisibles(key)
               return (
-                <section className="today-group" key={key}>
+                <section className={`today-group${key === 'vencidas' ? ' today-group-overdue' : ''}`} key={key}>
                   <header><h2>{title}</h2><span>{String(tareas.length).padStart(2, '0')}</span></header>
                   {tareas.length ? tareas.map((tarea) => {
                     const nombre = tarea.event_name || tarea.event?.name || eventosPorId[tarea.event_id]?.name || 'Evento'
                     const estado = estados.find(([value]) => value === tarea.status)?.[1] || 'Pendiente'
                     return (
-                      <article className="today-task" key={tarea.id}>
+                      <article
+                        className="today-task"
+                        key={tarea.id}
+                        style={{ '--event-color': eventosPorId[tarea.event_id]?.color || '#1d7a5f' }}
+                      >
                         <time dateTime={tarea.target_date || undefined}>{fechaCorta(tarea.target_date)}</time>
                         <div className="today-task-name"><span>{nombre}</span><strong>{tarea.title}</strong></div>
                         <span className={`today-status status-${tarea.status}`}>{estado}</span>

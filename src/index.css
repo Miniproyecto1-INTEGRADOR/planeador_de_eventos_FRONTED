@@ -976,6 +976,31 @@
   font-size: .7rem;
 }
 
+.today-group-overdue {
+  padding: .85rem .8rem .55rem;
+  border: 1px solid #f0d6cd;
+  border-left: 4px solid #cf664a;
+  border-radius: 7px;
+  background: #fff9f7;
+}
+
+.today-group-overdue h2 {
+  color: #9c422d;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.today-group-overdue > header > span {
+  border-color: #ebc6ba;
+  background: #fbe8e2;
+  color: #99422e;
+  font-weight: 800;
+}
+
+.today-group-overdue .today-task {
+  border-top-color: #f0ded8;
+}
+
 .today-task {
   display: grid;
   min-height: 64px;
@@ -983,6 +1008,7 @@
   align-items: center;
   gap: .75rem;
   padding: .55rem .65rem;
+  border-left: 4px solid var(--event-color, #1d7a5f);
   border-top: 1px solid #e6ebec;
 }
 
@@ -1566,6 +1592,7 @@
   margin-bottom: 1rem;
   padding: 1.25rem 1.35rem;
   border: 1px solid #e2e8e7;
+  border-left: 4px solid var(--event-color, #1d7a5f);
   border-radius: 10px;
   background: #fff;
   box-shadow: 0 3px 12px #1d2d4010;
