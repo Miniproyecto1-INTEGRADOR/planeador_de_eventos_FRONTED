@@ -528,9 +528,10 @@ export default function DetalleEvento() {
             {overload && (
               <>
                 <div className="reprogram-conflict" role="alert">
+                  <h3>Conflicto de sobrecarga</h3>
                   <strong>Quedarías con {horasDesdeMinutos(overload.planned_minutes)} planificadas (límite {horasDesdeMinutos(overload.limit_minutes)}).</strong>
-                  <p>Elige otra fecha o reduce la duración para mantener un ritmo viable.</p>
                 </div>
+                <p className="reprogram-question">¿Cómo quieres solucionarlo?</p>
                 <div className="reprogram-options">
                   <section>
                     <h3>Mover a otro día</h3>

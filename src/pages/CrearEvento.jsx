@@ -514,17 +514,12 @@ return (
     {conflictoPlan && (
       <div className="reprogram-overlay">
         <section className="reprogram-dialog" role="dialog" aria-modal="true" aria-labelledby="crear-conflicto-title">
-          <header>
-            <div>
-              <p className="eyebrow">Ajuste de agenda</p>
-              <h2 id="crear-conflicto-title">Resuelve la carga de ese día</h2>
-            </div>
-          </header>
           <p className="reprogram-task-name">{conflictoPlan.subtask_title}</p>
           <div className="reprogram-conflict" role="alert">
+            <h2 id="crear-conflicto-title">Conflicto de sobrecarga</h2>
             <strong>Quedarías con {horasDesdeMinutos(conflictoPlan.planned_minutes)} planificadas (límite {horasDesdeMinutos(conflictoPlan.limit_minutes)}).</strong>
-            <p>Elige otra fecha o reduce la duración. El evento se creará cuando el plan quede dentro del límite.</p>
           </div>
+          <p className="reprogram-question">¿Cómo quieres solucionarlo?</p>
           <div className="reprogram-options">
             <section>
               <h3>Mover a otro día</h3>
