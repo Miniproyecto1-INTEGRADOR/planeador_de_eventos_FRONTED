@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
+import { formatPercent } from '../utils/formatters.js'
 
 const panelStyle = {
   maxWidth: 1100,
@@ -79,7 +80,7 @@ export default function ProgresoPage() {
             </div>
           ) : (
             eventos.map((evento) => {
-              const porcentaje = Math.round(Math.min(100, Math.max(0, evento.progreso.percent || 0)))
+              const porcentaje = Math.min(100, Math.max(0, Number(evento.progreso.percent) || 0))
               return (
                 <article
                   key={evento.id}
@@ -97,7 +98,7 @@ export default function ProgresoPage() {
                   </header>
                   <div className="progress-event-summary">
                     <span>{evento.progreso.done} de {evento.progreso.total} gestiones completadas</span>
-                    <strong>{porcentaje}%</strong>
+                    <strong>{formatPercent(porcentaje)}%</strong>
                   </div>
                   <div
                     className="progress-track"

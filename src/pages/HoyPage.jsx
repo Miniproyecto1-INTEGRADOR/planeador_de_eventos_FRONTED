@@ -13,14 +13,14 @@ const grupos = [
 const estados = [
   ['pending', 'Pendiente'],
   ['postponed', 'Pospuesta'],
-  ['done', 'Completada'],
+  ['done', 'Ejecutada'],
 ]
 
 export default function HoyPage() {
   const [data, setData] = useState({ vencidas: [], hoy: [], proximas: [] })
   const [eventos, setEventos] = useState([])
   const [eventoFiltro, setEventoFiltro] = useState('todos')
-  const [estadoFiltro, setEstadoFiltro] = useState('todos')
+  const [estadoFiltro, setEstadoFiltro] = useState('pending')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -62,6 +62,9 @@ export default function HoyPage() {
   )
   const total = grupos.reduce((sum, [key]) => sum + tareasVisibles(key).length, 0)
   const totalGeneral = grupos.reduce((sum, [key]) => sum + data[key].length, 0)
+  const horasPendientesHoy = data.hoy
+    .filter((tarea) => tarea.status === 'pending')
+    .reduce((totalMinutes, tarea) => totalMinutes + Number(tarea.estimated_minutes || 0), 0)
   const hoy = new Intl.DateTimeFormat('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
 
   return (
@@ -93,11 +96,12 @@ export default function HoyPage() {
           </label>
           <label>Estado
             <select value={estadoFiltro} onChange={(event) => setEstadoFiltro(event.target.value)}>
-              <option value="todos">Todos los estados</option>
               {estados.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              <option value="todos">Todos los estados</option>
             </select>
           </label>
-          <p><strong>{total}</strong> gestiones</p>
+          <p><strong>{total}</strong> gestiones en la vista</p>
+          <p><strong>{formatMinutesAsHours(horasPendientesHoy)}</strong> pendientes hoy</p>
         </section>
 
         {error && <div className="today-error" role="alert">{error}<button type="button" onClick={cargarDatos}>Reintentar</button></div>}
@@ -132,6 +136,9 @@ export default function HoyPage() {
                       >
                         <time dateTime={tarea.target_date || undefined}>{formatDateDMY(tarea.target_date)}</time>
                         <div className="today-task-name"><span>{nombre}</span><strong>{tarea.title}</strong></div>
+                        {tarea.status === 'postponed' && tarea.postponed_note && (
+                          <p className="today-task-note">Nota: {tarea.postponed_note}</p>
+                        )}
                         <span className={`today-status status-${tarea.status}`}>{estado}</span>
                         <span className="today-hours">{formatMinutesAsHours(tarea.estimated_minutes)}</span>
                         <Link to="/evento/subtareas" onClick={() => sessionStorage.setItem('selectedEventId', tarea.event_id)}>Ver detalle</Link>

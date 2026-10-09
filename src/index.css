@@ -969,7 +969,7 @@
 
 .today-filters {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) auto;
+  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) auto auto;
   align-items: end;
   gap: .75rem;
   padding: .75rem .85rem;
@@ -2084,4 +2084,43 @@
   .progress-event-summary {
     align-items: flex-end;
   }
+}
+
+.today-task-note {
+  grid-column: 2 / -1;
+  margin: -.35rem 0 .15rem;
+  color: #8b651f;
+  font-size: .72rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.subtask-postponed-note {
+  max-width: 34rem;
+  margin: .45rem 0 0;
+  padding: .4rem .55rem;
+  border-left: 3px solid #d7a33d;
+  background: #fff8e8;
+  color: #73551f;
+  font-size: .85rem;
+  overflow-wrap: anywhere;
+}
+
+.subtask-postpone-form {
+  display: grid;
+  width: min(100%, 380px);
+  gap: .35rem;
+  margin-top: .65rem;
+  color: #46555c;
+  font-size: .82rem;
+  font-weight: 650;
+}
+
+.subtask-postpone-form textarea {
+  width: 100%;
+  padding: .55rem .65rem;
+  border: 1px solid #cdd9d4;
+  border-radius: 6px;
+  font: inherit;
+  resize: vertical;
 }

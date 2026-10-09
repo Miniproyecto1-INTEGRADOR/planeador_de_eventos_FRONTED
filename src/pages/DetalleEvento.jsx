@@ -4,7 +4,7 @@ import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
 import { getApiErrorMessage, getDailyCapacityConflict } from '../utils/apiError.js'
 import { getProjectedDailyMinutes } from '../utils/dailyCapacity.js'
-import { formatDateDMY, formatMinutesAsHours } from '../utils/formatters.js'
+import { formatDateDMY, formatMinutesAsHours, formatPercent } from '../utils/formatters.js'
 
 const panelStyle = {
   maxWidth: 1100,
@@ -68,6 +68,8 @@ export default function DetalleEvento() {
   const [titulo, setTitulo] = useState('')
   const [editandoSubtareaId, setEditandoSubtareaId] = useState('')
   const [tituloSubtareaEditado, setTituloSubtareaEditado] = useState('')
+  const [posponiendoSubtareaId, setPosponiendoSubtareaId] = useState('')
+  const [notaPosposicion, setNotaPosposicion] = useState('')
   const [targetDate, setTargetDate] = useState('')
   const [estimatedHours, setEstimatedHours] = useState(1)
   const [mostrarFormularioSubtarea, setMostrarFormularioSubtarea] = useState(false)
@@ -225,16 +227,20 @@ export default function DetalleEvento() {
     }
   }
 
-  const cambiarEstado = async (subtaskId, status) => {
+  const cambiarEstado = async (subtaskId, status, postponedNote = '') => {
     setError('')
     setSuccess('')
     setActionLoading(subtaskId)
     try {
-      await axios.patch(`${API_URL}/eventos/${id}/subtareas/${subtaskId}`, { status })
+      const changes = { status }
+      if (status === 'postponed') changes.postponed_note = postponedNote.trim() || null
+      await axios.patch(`${API_URL}/eventos/${id}/subtareas/${subtaskId}`, changes)
+      setPosponiendoSubtareaId('')
+      setNotaPosposicion('')
       setSuccess(status === 'done'
-        ? 'Gestión marcada como completada.'
+        ? 'Gestión logística marcada como ejecutada.'
         : status === 'postponed'
-          ? 'Gestión pospuesta para revisarla después.'
+          ? postponedNote.trim() ? 'Gestión pospuesta. La nota quedó guardada.' : 'Gestión pospuesta sin nota.'
           : 'Gestión devuelta a pendiente.')
       await cargarDatos()
     } catch (err) {
@@ -545,7 +551,7 @@ export default function DetalleEvento() {
           <div className="detalle-progreso">
             <div className="detalle-progreso-cabecera">
               <strong>Avance del evento</strong>
-              <span>{progreso.done} de {progreso.total} completadas · {progreso.percent}%</span>
+              <span>{progreso.done} de {progreso.total} gestiones ejecutadas · {formatPercent(progreso.percent)}%</span>
             </div>
             {progressError ? (
               <div className="progreso-error" role="alert">
@@ -601,7 +607,23 @@ export default function DetalleEvento() {
                     />
                   ) : <strong>{subtask.title}</strong>}
                   <div style={{ color: '#586464', marginTop: 4 }}>Fecha: {formatDateDMY(subtask.target_date)} · {formatMinutesAsHours(subtask.estimated_minutes)}</div>
-                  <div style={{ marginTop: 8, fontSize: 'calc(0.9rem - 2px)' }}>Estado: {subtask.status === 'done' ? 'Completada' : subtask.status === 'postponed' ? 'Pospuesta' : 'Pendiente'}</div>
+                  <div style={{ marginTop: 8, fontSize: 'calc(0.9rem - 2px)' }}>Estado: {subtask.status === 'done' ? 'Ejecutada' : subtask.status === 'postponed' ? 'Pospuesta' : 'Pendiente'}</div>
+                  {subtask.status === 'postponed' && subtask.postponed_note && (
+                    <p className="subtask-postponed-note">Nota: {subtask.postponed_note}</p>
+                  )}
+                  {posponiendoSubtareaId === subtask.id && (
+                    <div className="subtask-postpone-form">
+                      <label htmlFor={`postponed-note-${subtask.id}`}>Nota de posposición (opcional)</label>
+                      <textarea
+                        id={`postponed-note-${subtask.id}`}
+                        rows="2"
+                        maxLength="500"
+                        value={notaPosposicion}
+                        onChange={(event) => setNotaPosposicion(event.target.value)}
+                        placeholder="Ej. esperando confirmación del salón"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
                   {editandoSubtareaId === subtask.id ? (
@@ -609,16 +631,23 @@ export default function DetalleEvento() {
                       <button onClick={() => guardarNombreSubtarea(subtask.id)} disabled={actionLoading === `edit-${subtask.id}`} style={{ ...subtaskButton, background: '#1d7a5f', color: '#fff' }}>{actionLoading === `edit-${subtask.id}` ? 'Guardando…' : 'Guardar'}</button>
                       <button onClick={() => setEditandoSubtareaId('')} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#edf2f3', color: '#243434' }}>Cancelar</button>
                     </>
+                  ) : posponiendoSubtareaId === subtask.id ? (
+                    <>
+                      <button onClick={() => cambiarEstado(subtask.id, 'postponed', notaPosposicion)} disabled={actionLoading === subtask.id} style={{ ...subtaskButton, background: '#1d7a5f', color: '#fff' }}>{actionLoading === subtask.id ? 'Guardando…' : 'Guardar posposición'}</button>
+                      <button onClick={() => { setPosponiendoSubtareaId(''); setNotaPosposicion('') }} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#edf2f3', color: '#243434' }}>Cancelar</button>
+                    </>
                   ) : (
                     <>
-                      {subtask.status === 'done' ? (
+                      {subtask.status !== 'pending' ? (
                         <button onClick={() => cambiarEstado(subtask.id, 'pending')} disabled={actionLoading === subtask.id} style={{ ...subtaskButton, background: '#f1f5f2', color: '#176b56' }}>Pendiente</button>
                       ) : (
                         <button onClick={() => cambiarEstado(subtask.id, 'done')} disabled={actionLoading === subtask.id} style={{ ...subtaskButton, background: '#dff8ed', color: '#0f5a3a' }}>Hecha</button>
                       )}
                       <button onClick={() => { setEditandoSubtareaId(subtask.id); setTituloSubtareaEditado(subtask.title); setError('') }} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#eef3ff', color: '#2b4d96' }}>Editar</button>
                       <button onClick={() => abrirReprogramacion(subtask)} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#f1f5f2', color: '#176b56' }}>Reprogramar</button>
-                      <button onClick={() => cambiarEstado(subtask.id, 'postponed')} disabled={actionLoading === subtask.id || subtask.status === 'postponed'} style={{ ...subtaskButton, background: '#eef3ff', color: '#2b4d96' }}>Posponer</button>
+                      {subtask.status === 'pending' && (
+                        <button onClick={() => { setPosponiendoSubtareaId(subtask.id); setNotaPosposicion(''); setError('') }} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#eef3ff', color: '#2b4d96' }}>Posponer</button>
+                      )}
                       <button onClick={() => eliminarSubtarea(subtask.id)} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#ffe5e1', color: '#9b2a24' }}>{actionLoading === `delete-${subtask.id}` ? 'Eliminando…' : 'Eliminar'}</button>
                     </>
                   )}
