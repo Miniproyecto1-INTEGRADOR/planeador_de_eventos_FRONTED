@@ -33,6 +33,7 @@ const tiposEvento = [
   'Cumpleaños',
   'Corporativo',
   'Conferencia',
+  'Otros',
 ]
 
 const horasDesdeMinutos = (minutes) => `${Number((Number(minutes || 0) / 60).toFixed(1)).toLocaleString('es-MX')} h`
@@ -339,12 +340,13 @@ return (
           />
         </div>
 
-        <div className="crear-campo">
-          <label htmlFor="color">Color del evento</label>
+        <div className="crear-campo crear-campo-color">
+          <span>Color</span>
 
           <div className="crear-color">
             <input
               id="color"
+              aria-label="Color"
               className="crear-color-picker"
               type="color"
               value={evento.color}

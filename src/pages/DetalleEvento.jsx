@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
-import { getApiErrorMessage } from '../utils/apiError.js'
+import { getApiErrorMessage, getDailyCapacityConflict } from '../utils/apiError.js'
 
 const panelStyle = {
   maxWidth: 1100,
@@ -45,6 +45,7 @@ const tiposEvento = [
   'Cumpleaños',
   'Corporativo',
   'Conferencia',
+  'Otros',
 ]
 
 const horasDesdeMinutos = (minutes) => `${Number((Number(minutes || 0) / 60).toFixed(1)).toLocaleString('es-MX')} h`
@@ -280,8 +281,8 @@ export default function DetalleEvento() {
       setSuccess('Fecha y duración actualizadas. Al volver a Hoy, la gestión aparecerá en su nuevo grupo.')
       await cargarDatos()
     } catch (requestError) {
-      const detail = requestError?.response?.data?.detail
-      if (requestError?.response?.status === 409 && detail?.code === 'daily_capacity_exceeded') {
+      const detail = getDailyCapacityConflict(requestError)
+      if (detail) {
         setReprogramDate(targetDate)
         setReprogramHours(String(hoursValue))
         setReducedHours(String(Math.max(0.5, hoursValue - 0.5)))
@@ -520,9 +521,12 @@ export default function DetalleEvento() {
                 <input type="number" required min="0.5" step="0.5" value={reprogramHours} onChange={(event) => setReprogramHours(event.target.value)} />
               </label>
               {error && <p className="state-message state-error" role="alert">{error}</p>}
-              <button className="reprogram-primary" type="submit" disabled={Boolean(actionLoading)}>
-                {actionLoading ? 'Comprobando…' : overload ? 'Volver a comprobar' : 'Guardar reprogramación'}
-              </button>
+              <div className="reprogram-form-actions">
+                <button className="reprogram-primary" type="submit" disabled={Boolean(actionLoading)}>
+                  {actionLoading ? 'Comprobando…' : overload ? 'Volver a comprobar' : 'Guardar reprogramación'}
+                </button>
+                <button type="button" className="reprogram-cancel" onClick={cerrarReprogramacion} disabled={Boolean(actionLoading)}>Cancelar</button>
+              </div>
             </form>
 
             {overload && (
@@ -556,8 +560,6 @@ export default function DetalleEvento() {
                 </div>
               </>
             )}
-
-            <button type="button" className="reprogram-cancel" onClick={cerrarReprogramacion} disabled={Boolean(actionLoading)}>Cancelar</button>
           </section>
         </div>
       )}

@@ -1,6 +1,41 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { getApiErrorMessage, getRegistrationErrorMessage } from './apiError.js'
+import { getApiErrorMessage, getDailyCapacityConflict, getRegistrationErrorMessage } from './apiError.js'
+
+test('normalizes the local daily-capacity conflict response', () => {
+  const conflict = getDailyCapacityConflict({
+    response: {
+      status: 409,
+      data: {
+        detail: {
+          code: 'daily_capacity_exceeded',
+          planned_minutes: 420,
+          limit_minutes: 360,
+        },
+      },
+    },
+  })
+
+  assert.equal(conflict.planned_minutes, 420)
+  assert.equal(conflict.limit_minutes, 360)
+})
+
+test('normalizes the documented daily-capacity conflict response', () => {
+  const conflict = getDailyCapacityConflict({
+    response: {
+      status: 409,
+      data: {
+        detail: 'La carga del día supera tu límite diario.',
+        planned_hours: 4.5,
+        limit_hours: 4,
+      },
+    },
+  })
+
+  assert.equal(conflict.code, 'daily_capacity_exceeded')
+  assert.equal(conflict.planned_minutes, 270)
+  assert.equal(conflict.limit_minutes, 240)
+})
 
 test('maps invalid login credentials to a Spanish user does not exist message', () => {
   const error = {

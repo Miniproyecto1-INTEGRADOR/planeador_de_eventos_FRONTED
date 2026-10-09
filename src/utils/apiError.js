@@ -86,6 +86,33 @@ export function getApiErrorMessage(error, fallback) {
   return fallback || friendlyServerError
 }
 
+export function getDailyCapacityConflict(error) {
+  if (error?.response?.status !== 409) return null
+
+  const responseData = error.response.data || {}
+  const detail = responseData.detail && typeof responseData.detail === 'object'
+    ? responseData.detail
+    : responseData
+  const toNumber = (value) => value === null || value === undefined || value === ''
+    ? null
+    : Number.isFinite(Number(value)) ? Number(value) : null
+  const plannedMinutes = toNumber(detail.planned_minutes)
+    ?? (toNumber(detail.planned_hours) === null ? null : Math.round(Number(detail.planned_hours) * 60))
+  const limitMinutes = toNumber(detail.limit_minutes)
+    ?? (toNumber(detail.limit_hours) === null ? null : Math.round(Number(detail.limit_hours) * 60))
+  const isCapacityConflict = detail.code === 'daily_capacity_exceeded'
+    || (toNumber(detail.planned_hours) !== null && toNumber(detail.limit_hours) !== null)
+
+  if (!isCapacityConflict || plannedMinutes === null || limitMinutes === null) return null
+
+  return {
+    ...detail,
+    code: 'daily_capacity_exceeded',
+    planned_minutes: plannedMinutes,
+    limit_minutes: limitMinutes,
+  }
+}
+
 export function getRegistrationErrorMessage(error) {
   const connectionMessage = 'No pudimos conectar con el servicio. Revisa tu conexión e inténtalo de nuevo.'
   const fallbackMessage = 'No pudimos crear tu cuenta. Revisa los datos e inténtalo de nuevo.'
