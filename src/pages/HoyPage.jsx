@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
+import { formatDateDMY, formatMinutesAsHours } from '../utils/formatters.js'
 
 const grupos = [
   ['vencidas', 'Vencidas'],
@@ -14,12 +15,6 @@ const estados = [
   ['postponed', 'Pospuesta'],
   ['done', 'Completada'],
 ]
-
-const fechaCorta = (value) => {
-  if (!value) return 'Sin fecha'
-  const [year, month, day] = value.slice(0, 10).split('-').map(Number)
-  return new Intl.DateTimeFormat('es-MX', { day: '2-digit', month: 'short' }).format(new Date(year, month - 1, day))
-}
 
 export default function HoyPage() {
   const [data, setData] = useState({ vencidas: [], hoy: [], proximas: [] })
@@ -135,10 +130,10 @@ export default function HoyPage() {
                         key={tarea.id}
                         style={{ '--event-color': eventosPorId[tarea.event_id]?.color || '#1d7a5f' }}
                       >
-                        <time dateTime={tarea.target_date || undefined}>{fechaCorta(tarea.target_date)}</time>
+                        <time dateTime={tarea.target_date || undefined}>{formatDateDMY(tarea.target_date)}</time>
                         <div className="today-task-name"><span>{nombre}</span><strong>{tarea.title}</strong></div>
                         <span className={`today-status status-${tarea.status}`}>{estado}</span>
-                        <span className="today-minutes">{tarea.estimated_minutes || 0} min</span>
+                        <span className="today-hours">{formatMinutesAsHours(tarea.estimated_minutes)}</span>
                         <Link to="/evento/subtareas" onClick={() => sessionStorage.setItem('selectedEventId', tarea.event_id)}>Ver detalle</Link>
                       </article>
                     )

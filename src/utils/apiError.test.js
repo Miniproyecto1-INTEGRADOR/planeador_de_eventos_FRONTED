@@ -37,7 +37,7 @@ test('normalizes the documented daily-capacity conflict response', () => {
   assert.equal(conflict.limit_minutes, 240)
 })
 
-test('maps invalid login credentials to a Spanish user does not exist message', () => {
+test('maps invalid login credentials to a Spanish invalid credentials message', () => {
   const error = {
     response: {
       data: {
@@ -46,10 +46,10 @@ test('maps invalid login credentials to a Spanish user does not exist message', 
     },
   }
 
-  assert.equal(getApiErrorMessage(error, 'Credenciales inválidas.'), 'El usuario no existe.')
+  assert.equal(getApiErrorMessage(error, 'Credenciales inválidas.'), 'El usuario o contraseña son incorrectos.')
 })
 
-test('maps no active account found to a Spanish user does not exist message', () => {
+test('maps no active account found to a Spanish invalid credentials message', () => {
   const error = {
     response: {
       data: {
@@ -58,7 +58,7 @@ test('maps no active account found to a Spanish user does not exist message', ()
     },
   }
 
-  assert.equal(getApiErrorMessage(error, 'Credenciales inválidas.'), 'El usuario no existe.')
+  assert.equal(getApiErrorMessage(error, 'Credenciales inválidas.'), 'El usuario o contraseña son incorrectos.')
 })
 
 test('maps duplicate email registration response to a Spanish message', () => {

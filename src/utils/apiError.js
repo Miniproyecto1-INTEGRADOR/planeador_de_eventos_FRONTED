@@ -1,6 +1,6 @@
 export function getApiErrorMessage(error, fallback) {
   const friendlyServerError = 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'
-  const userDoesNotExistMessage = 'El usuario no existe.'
+  const userDoesNotExistMessage = 'El usuario o contraseña son incorrectos.'
   const invalidCredentialsMessage = 'Credenciales inválidas.'
   const emailAlreadyRegisteredMessage = 'El correo electrónico ya está registrado. Inténtalo con otro correo.'
 

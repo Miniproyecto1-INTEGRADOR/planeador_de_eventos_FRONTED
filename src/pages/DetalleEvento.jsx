@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useEffectEvent, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
 import { getApiErrorMessage, getDailyCapacityConflict } from '../utils/apiError.js'
+import { getProjectedDailyMinutes } from '../utils/dailyCapacity.js'
+import { formatDateDMY, formatMinutesAsHours } from '../utils/formatters.js'
 
 const panelStyle = {
   maxWidth: 1100,
@@ -27,6 +29,13 @@ const baseButton = {
   cursor: 'pointer',
 }
 
+const subtaskButton = {
+  ...baseButton,
+  borderRadius: 7,
+  padding: '0.38rem 0.55rem',
+  fontSize: '0.8rem',
+}
+
 const tiposEvento = [
   'Bodas',
   'XV años',
@@ -48,15 +57,17 @@ const tiposEvento = [
   'Otros',
 ]
 
-const horasDesdeMinutos = (minutes) => `${Number((Number(minutes || 0) / 60).toFixed(1)).toLocaleString('es-MX')} h`
-
 export default function DetalleEvento() {
   const { id: routeId } = useParams()
+  const location = useLocation()
+  const navigate = useNavigate()
   const id = routeId || sessionStorage.getItem('selectedEventId')
   const [evento, setEvento] = useState(null)
   const [subtareas, setSubtareas] = useState([])
   const [progreso, setProgreso] = useState({ done: 0, total: 0, percent: 0 })
   const [titulo, setTitulo] = useState('')
+  const [editandoSubtareaId, setEditandoSubtareaId] = useState('')
+  const [tituloSubtareaEditado, setTituloSubtareaEditado] = useState('')
   const [targetDate, setTargetDate] = useState('')
   const [estimatedHours, setEstimatedHours] = useState(1)
   const [mostrarFormularioSubtarea, setMostrarFormularioSubtarea] = useState(false)
@@ -74,6 +85,7 @@ export default function DetalleEvento() {
   const [alternativeDate, setAlternativeDate] = useState('')
   const [reducedHours, setReducedHours] = useState('0.5')
   const [overload, setOverload] = useState(null)
+  const [dailyLimitContext, setDailyLimitContext] = useState(null)
   const [confirmarEliminacion, setConfirmarEliminacion] = useState(false)
 
   const cargarDatos = async () => {
@@ -204,7 +216,7 @@ export default function DetalleEvento() {
     } catch (err) {
       const detail = err?.response?.data?.detail
       if (err?.response?.status === 409 && detail?.code === 'daily_capacity_exceeded') {
-        setError(`Quedarías con ${horasDesdeMinutos(detail.planned_minutes)} planificadas (límite ${horasDesdeMinutos(detail.limit_minutes)}). Cambia la fecha o reduce las horas y vuelve a guardar.`)
+        setError(`Quedarías con ${formatMinutesAsHours(detail.planned_minutes)} planificadas (límite ${formatMinutesAsHours(detail.limit_minutes)}). Cambia la fecha o reduce las horas y vuelve a guardar.`)
       } else {
         setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
       }
@@ -219,7 +231,11 @@ export default function DetalleEvento() {
     setActionLoading(subtaskId)
     try {
       await axios.patch(`${API_URL}/eventos/${id}/subtareas/${subtaskId}`, { status })
-      setSuccess(status === 'done' ? 'Gestión marcada como completada.' : 'Gestión pospuesta para revisarla después.')
+      setSuccess(status === 'done'
+        ? 'Gestión marcada como completada.'
+        : status === 'postponed'
+          ? 'Gestión pospuesta para revisarla después.'
+          : 'Gestión devuelta a pendiente.')
       await cargarDatos()
     } catch (err) {
       setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
@@ -228,10 +244,32 @@ export default function DetalleEvento() {
     }
   }
 
+  const guardarNombreSubtarea = async (subtaskId) => {
+    const title = tituloSubtareaEditado.trim()
+    if (!title) {
+      setError('El nombre de la subtarea no puede quedar vacío.')
+      return
+    }
+
+    setError('')
+    setSuccess('')
+    setActionLoading(`edit-${subtaskId}`)
+    try {
+      await axios.patch(`${API_URL}/eventos/${id}/subtareas/${subtaskId}`, { title })
+      setEditandoSubtareaId('')
+      setSuccess('Nombre de subtarea actualizado.')
+      await cargarDatos()
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'No pudimos actualizar el nombre de la subtarea.'))
+    } finally {
+      setActionLoading('')
+    }
+  }
+
   const eliminarSubtarea = async (subtaskId) => {
     setError('')
     setSuccess('')
-    setActionLoading(subtaskId)
+    setActionLoading(`delete-${subtaskId}`)
     try {
       await axios.delete(`${API_URL}/eventos/${id}/subtareas/${subtaskId}`)
       setSuccess('Gestión eliminada del evento.')
@@ -253,7 +291,38 @@ export default function DetalleEvento() {
     setReducedHours(String(Math.max(0.5, Number(subtask.estimated_minutes || 60) / 60 - 0.5)))
   }
 
+  const abrirSubtareaSolicitada = useEffectEvent((subtask, limitContext) => {
+    abrirReprogramacion(subtask)
+    if (!limitContext) return
+
+    setDailyLimitContext(limitContext)
+    setOverload({ planned_minutes: limitContext.planned_minutes, limit_minutes: limitContext.limit_minutes })
+    const hoursToReduce = (limitContext.planned_minutes - limitContext.limit_minutes) / 60
+    const currentHours = Number(subtask.estimated_minutes || 60) / 60
+    setReducedHours(String(Math.max(0.5, currentHours - hoursToReduce)))
+  })
+
+  useEffect(() => {
+    const subtaskId = location.state?.reprogramSubtaskId
+    if (!subtaskId || loading || !evento) return
+
+    const subtask = subtareas.find((item) => item.id === subtaskId)
+    if (!subtask) return
+
+    abrirSubtareaSolicitada(subtask, location.state?.dailyLimitContext)
+    navigate(location.pathname, { replace: true, state: null })
+  }, [evento, loading, location.pathname, location.state, navigate, subtareas])
+
   const cerrarReprogramacion = () => {
+    if (dailyLimitContext) {
+      navigate('/configuracion', {
+        state: {
+          pendingLimitHours: dailyLimitContext.limit_minutes / 60,
+          capacityConflict: dailyLimitContext,
+        },
+      })
+      setDailyLimitContext(null)
+    }
     setReprogramTask(null)
     setOverload(null)
     setAlternativeDate('')
@@ -273,10 +342,60 @@ export default function DetalleEvento() {
     setOverload(null)
     setActionLoading(`reprogram-${reprogramTask.id}`)
     try {
+      if (dailyLimitContext) {
+        const projectedMinutes = getProjectedDailyMinutes(
+          dailyLimitContext.subtasks,
+          reprogramTask.id,
+          dailyLimitContext.target_date,
+          targetDate,
+          estimatedMinutes,
+        )
+        if (
+          projectedMinutes > dailyLimitContext.limit_minutes &&
+          projectedMinutes >= dailyLimitContext.planned_minutes
+        ) {
+          const otherMinutes = dailyLimitContext.planned_minutes - Number(reprogramTask.estimated_minutes || 0)
+          const maximumHours = Math.floor((dailyLimitContext.limit_minutes - otherMinutes) / 30) / 2
+          setError(`Con este ajuste quedarían ${formatMinutesAsHours(projectedMinutes)}; para guardar el límite de ${formatMinutesAsHours(dailyLimitContext.limit_minutes)}, mueve la gestión o reduce su duración.`)
+          setReprogramDate(targetDate)
+          setReprogramHours(String(hoursValue))
+          setReducedHours(String(Math.max(0.5, Math.min(hoursValue - 0.5, maximumHours))))
+          setOverload({ planned_minutes: projectedMinutes, limit_minutes: dailyLimitContext.limit_minutes })
+          return
+        }
+      }
+
       await axios.patch(`${API_URL}/eventos/${id}/subtareas/${reprogramTask.id}`, {
         target_date: targetDate,
         estimated_minutes: estimatedMinutes,
       })
+      if (dailyLimitContext) {
+        const pendingLimitHours = dailyLimitContext.limit_minutes / 60
+        try {
+          await axios.put(
+            `${API_URL}/usuarios/${encodeURIComponent(localStorage.getItem('userId'))}/limite`,
+            null,
+            { params: { value: pendingLimitHours } },
+          )
+          navigate('/configuracion', {
+            state: {
+              pendingLimitHours,
+              adjustmentSaved: true,
+            },
+          })
+        } catch (limitError) {
+          const remainingConflict = getDailyCapacityConflict(limitError)
+          navigate('/configuracion', {
+            state: {
+              pendingLimitHours,
+              adjustmentSaved: true,
+              capacityConflict: remainingConflict || dailyLimitContext,
+              errorMessage: remainingConflict ? '' : getApiErrorMessage(limitError, 'No pudimos aplicar el nuevo límite todavía.'),
+            },
+          })
+        }
+        return
+      }
       cerrarReprogramacion()
       setSuccess('Fecha y duración actualizadas. Al volver a Hoy, la gestión aparecerá en su nuevo grupo.')
       await cargarDatos()
@@ -468,15 +587,41 @@ export default function DetalleEvento() {
             {subtareas.map((subtask) => (
               <div key={subtask.id} style={{ border: '1px solid #e7ecec', borderRadius: 12, padding: '0.9rem 1rem', display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                 <div>
-                  <strong>{subtask.title}</strong>
-                  <div style={{ color: '#586464', marginTop: 4 }}>Fecha: {subtask.target_date || 'Sin fecha'} · {subtask.estimated_minutes} min</div>
+                  {editandoSubtareaId === subtask.id ? (
+                    <input
+                      autoFocus
+                      aria-label="Nombre de la subtarea"
+                      value={tituloSubtareaEditado}
+                      onChange={(event) => setTituloSubtareaEditado(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') guardarNombreSubtarea(subtask.id)
+                        if (event.key === 'Escape') setEditandoSubtareaId('')
+                      }}
+                      style={{ minWidth: 'min(280px, 70vw)', padding: '0.45rem 0.6rem', border: '1px solid #cdd9d4', borderRadius: 6, font: 'inherit' }}
+                    />
+                  ) : <strong>{subtask.title}</strong>}
+                  <div style={{ color: '#586464', marginTop: 4 }}>Fecha: {formatDateDMY(subtask.target_date)} · {formatMinutesAsHours(subtask.estimated_minutes)}</div>
                   <div style={{ marginTop: 8, fontSize: 'calc(0.9rem - 2px)' }}>Estado: {subtask.status === 'done' ? 'Completada' : subtask.status === 'postponed' ? 'Pospuesta' : 'Pendiente'}</div>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <button onClick={() => abrirReprogramacion(subtask)} disabled={Boolean(actionLoading)} style={{ ...baseButton, background: '#f1f5f2', color: '#176b56' }}>Reprogramar</button>
-                  <button onClick={() => cambiarEstado(subtask.id, 'done')} disabled={actionLoading === subtask.id || subtask.status === 'done'} style={{ ...baseButton, background: '#dff8ed', color: '#0f5a3a' }}>Hecha</button>
-                  <button onClick={() => cambiarEstado(subtask.id, 'postponed')} disabled={actionLoading === subtask.id || subtask.status === 'postponed'} style={{ ...baseButton, background: '#eef3ff', color: '#2b4d96' }}>Posponer</button>
-                  <button onClick={() => eliminarSubtarea(subtask.id)} disabled={actionLoading === subtask.id} style={{ ...baseButton, background: '#ffe5e1', color: '#9b2a24' }}>{actionLoading === subtask.id ? 'Guardando...' : 'Eliminar'}</button>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  {editandoSubtareaId === subtask.id ? (
+                    <>
+                      <button onClick={() => guardarNombreSubtarea(subtask.id)} disabled={actionLoading === `edit-${subtask.id}`} style={{ ...subtaskButton, background: '#1d7a5f', color: '#fff' }}>{actionLoading === `edit-${subtask.id}` ? 'Guardando…' : 'Guardar'}</button>
+                      <button onClick={() => setEditandoSubtareaId('')} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#edf2f3', color: '#243434' }}>Cancelar</button>
+                    </>
+                  ) : (
+                    <>
+                      {subtask.status === 'done' ? (
+                        <button onClick={() => cambiarEstado(subtask.id, 'pending')} disabled={actionLoading === subtask.id} style={{ ...subtaskButton, background: '#f1f5f2', color: '#176b56' }}>Pendiente</button>
+                      ) : (
+                        <button onClick={() => cambiarEstado(subtask.id, 'done')} disabled={actionLoading === subtask.id} style={{ ...subtaskButton, background: '#dff8ed', color: '#0f5a3a' }}>Hecha</button>
+                      )}
+                      <button onClick={() => { setEditandoSubtareaId(subtask.id); setTituloSubtareaEditado(subtask.title); setError('') }} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#eef3ff', color: '#2b4d96' }}>Editar</button>
+                      <button onClick={() => abrirReprogramacion(subtask)} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#f1f5f2', color: '#176b56' }}>Reprogramar</button>
+                      <button onClick={() => cambiarEstado(subtask.id, 'postponed')} disabled={actionLoading === subtask.id || subtask.status === 'postponed'} style={{ ...subtaskButton, background: '#eef3ff', color: '#2b4d96' }}>Posponer</button>
+                      <button onClick={() => eliminarSubtarea(subtask.id)} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#ffe5e1', color: '#9b2a24' }}>{actionLoading === `delete-${subtask.id}` ? 'Eliminando…' : 'Eliminar'}</button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -523,17 +668,17 @@ export default function DetalleEvento() {
               {error && <p className="state-message state-error" role="alert">{error}</p>}
               <div className="reprogram-form-actions">
                 <button className="reprogram-primary" type="submit" disabled={Boolean(actionLoading)}>
-                  {actionLoading ? 'Comprobando…' : overload ? 'Volver a comprobar' : 'Guardar reprogramación'}
+                  {actionLoading ? 'Comprobando…' : overload && !dailyLimitContext ? 'Volver a comprobar' : 'Guardar reprogramación'}
                 </button>
                 <button type="button" className="reprogram-cancel" onClick={cerrarReprogramacion} disabled={Boolean(actionLoading)}>Cancelar</button>
               </div>
             </form>
 
-            {overload && (
+            {overload && !dailyLimitContext && (
               <>
                 <div className="reprogram-conflict" role="alert">
                   <h3>Conflicto de sobrecarga</h3>
-                  <strong>Quedarías con {horasDesdeMinutos(overload.planned_minutes)} planificadas (límite {horasDesdeMinutos(overload.limit_minutes)}).</strong>
+                  <strong>Quedarías con {formatMinutesAsHours(overload.planned_minutes)} planificadas (límite {formatMinutesAsHours(overload.limit_minutes)}).</strong>
                 </div>
                 <p className="reprogram-question">¿Cómo quieres solucionarlo?</p>
                 <div className="reprogram-options">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
 import { getApiErrorMessage } from '../utils/apiError.js'
+import { formatMinutesAsHours } from '../utils/formatters.js'
 
 const valoresIniciales = {
   name: '',
@@ -35,8 +36,6 @@ const tiposEvento = [
   'Conferencia',
   'Otros',
 ]
-
-const horasDesdeMinutos = (minutes) => `${Number((Number(minutes || 0) / 60).toFixed(1)).toLocaleString('es-MX')} h`
 
 export default function CrearEvento() {
   const navigate = useNavigate()
@@ -519,7 +518,7 @@ return (
           <p className="reprogram-task-name">{conflictoPlan.subtask_title}</p>
           <div className="reprogram-conflict" role="alert">
             <h2 id="crear-conflicto-title">Conflicto de sobrecarga</h2>
-            <strong>Quedarías con {horasDesdeMinutos(conflictoPlan.planned_minutes)} planificadas (límite {horasDesdeMinutos(conflictoPlan.limit_minutes)}).</strong>
+            <strong>Quedarías con {formatMinutesAsHours(conflictoPlan.planned_minutes)} planificadas (límite {formatMinutesAsHours(conflictoPlan.limit_minutes)}).</strong>
           </div>
           <p className="reprogram-question">¿Cómo quieres solucionarlo?</p>
           <div className="reprogram-options">
