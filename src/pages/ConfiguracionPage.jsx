@@ -64,7 +64,7 @@ export default function ConfiguracionPage() {
   return (
     <main className="settings-page">
       <p className="eyebrow">Tu disponibilidad</p>
-      <h2>Configuración</h2>
+      <h2>Límite diario</h2>
       <p>Define cuántas horas de gestiones puedes organizar por día. Usaremos este límite para avisarte si una reprogramación concentra demasiado trabajo.</p>
 
       {!userId ? (

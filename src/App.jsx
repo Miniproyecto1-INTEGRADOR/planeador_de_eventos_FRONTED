@@ -27,9 +27,9 @@ function AppShell({ onLogout, children }) {
         <Link className="today-logo" to="/hoy" aria-label="Eventos al Día, inicio"><img src="/Logo.png" alt="Eventos al Día" /></Link>
         <nav aria-label="Navegación principal">
           <p>Tu espacio</p>
-          <Link className={isHoy ? 'active' : ''} to="/hoy"><span>01</span>Hoy</Link>
-          <Link className={isProgreso ? 'active' : ''} to="/progreso"><span>02</span>Progreso</Link>
-          <Link className={isConfiguracion ? 'active' : ''} to="/configuracion"><span>03</span>Configuración</Link>
+          <Link className={isHoy ? 'active' : ''} to="/hoy"><img className="today-nav-icon" src="/Hoy.png" alt="" aria-hidden="true" />Hoy</Link>
+          <Link className={isProgreso ? 'active' : ''} to="/progreso"><img className="today-nav-icon" src="/Progreso.png" alt="" aria-hidden="true" />Progreso</Link>
+          <Link className={isConfiguracion ? 'active' : ''} to="/configuracion"><img className="today-nav-icon" src="/Límite%20diario.png" alt="" aria-hidden="true" />Límite diario</Link>
         </nav>
         <button className="today-logout" type="button" onClick={onLogout}>
           <img src="/Cerrar sesión.png" alt="" aria-hidden="true" />
