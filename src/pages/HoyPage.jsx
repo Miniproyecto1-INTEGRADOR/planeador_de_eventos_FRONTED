@@ -74,7 +74,7 @@ export default function HoyPage() {
           <div>
             <p>{hoy}</p>
             <div className="today-title">
-              <h2>Hoy</h2>
+              <h1>Hoy</h1>
               <details className="today-sort-help">
                 <summary aria-label="Ver regla de ordenamiento">i</summary>
                 <div className="today-sort-tooltip">
@@ -88,18 +88,20 @@ export default function HoyPage() {
         </header>
 
         <section className="today-filters" aria-label="Filtros de tareas">
-          <label>Evento
-            <select value={eventoFiltro} onChange={(event) => setEventoFiltro(event.target.value)}>
+          <div className="today-filter-control">
+            <label htmlFor="today-event-filter">Evento</label>
+            <select id="today-event-filter" value={eventoFiltro} onChange={(event) => setEventoFiltro(event.target.value)}>
               <option value="todos">Todos los eventos</option>
               {eventos.map((evento) => <option key={evento.id} value={evento.id}>{evento.name}</option>)}
             </select>
-          </label>
-          <label>Estado
-            <select value={estadoFiltro} onChange={(event) => setEstadoFiltro(event.target.value)}>
+          </div>
+          <div className="today-filter-control">
+            <label htmlFor="today-status-filter">Estado</label>
+            <select id="today-status-filter" value={estadoFiltro} onChange={(event) => setEstadoFiltro(event.target.value)}>
               {estados.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               <option value="todos">Todos los estados</option>
             </select>
-          </label>
+          </div>
           <p><strong>{total}</strong> gestiones en la vista</p>
           <p><strong>{formatMinutesAsHours(horasPendientesHoy)}</strong> pendientes hoy</p>
         </section>
@@ -141,7 +143,13 @@ export default function HoyPage() {
                         )}
                         <span className={`today-status status-${tarea.status}`}>{estado}</span>
                         <span className="today-hours">{formatMinutesAsHours(tarea.estimated_minutes)}</span>
-                        <Link to="/evento/subtareas" onClick={() => sessionStorage.setItem('selectedEventId', tarea.event_id)}>Ver detalle</Link>
+                        <Link
+                          to="/evento/subtareas"
+                          aria-label={`Ver detalle de ${tarea.title} en ${nombre}`}
+                          onClick={() => sessionStorage.setItem('selectedEventId', tarea.event_id)}
+                        >
+                          Ver detalle
+                        </Link>
                       </article>
                     )
                   }) : <p className="today-no-tasks">No hay gestiones en este bloque.</p>}

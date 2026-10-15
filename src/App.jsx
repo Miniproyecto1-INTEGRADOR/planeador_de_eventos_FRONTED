@@ -24,7 +24,11 @@ function AppShell({ onLogout, children }) {
   return (
     <div className="app-shell">
       <aside className="today-sidebar">
-        <Link className="today-logo" to="/hoy" aria-label="Eventos al Día, inicio"><img src="/Logo.png" alt="Eventos al Día" /></Link>
+        {isHoy ? (
+          <div className="today-logo"><img src="/Logo.png" alt="Eventos al Día" /></div>
+        ) : (
+          <Link className="today-logo" to="/hoy" aria-label="Eventos al Día, inicio"><img src="/Logo.png" alt="Eventos al Día" /></Link>
+        )}
         <nav aria-label="Navegación principal">
           <p>Tu espacio</p>
           <Link className={isHoy ? 'active' : ''} to="/hoy"><img className="today-nav-icon" src="/Hoy.png" alt="" aria-hidden="true" />Hoy</Link>
