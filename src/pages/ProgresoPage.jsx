@@ -55,7 +55,7 @@ export default function ProgresoPage() {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <div>
           <p style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#08734f', fontWeight: 700 }}>Eventos</p>
-          <h2 style={{ margin: '0.4rem 0 0' }}>Todos los eventos</h2>
+          <h1 style={{ margin: '0.4rem 0 0', color: '#182538', fontSize: '1.5rem' }}>Todos los eventos</h1>
         </div>
         <Link to="/hoy" style={{ padding: '.7rem 1rem', borderRadius: 10, background: '#edf2f3', color: '#243434', fontWeight: 700, textDecoration: 'none' }}>
           Volver a Hoy
@@ -118,7 +118,7 @@ export default function ProgresoPage() {
                         <h2>{evento.name}</h2>
                         <span>{evento.event_type}</span>
                       </div>
-                      <Link to="/evento/subtareas" onClick={() => sessionStorage.setItem('selectedEventId', evento.id)}>
+                      <Link to={`/evento/${evento.id}`} aria-label={`Ver detalle del evento ${evento.name}`}>
                         Ver detalle <span aria-hidden="true">↗</span>
                       </Link>
                     </header>

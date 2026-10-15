@@ -1680,7 +1680,7 @@
 
 .progress-overview-heading p {
   margin: 0 0 .25rem;
-  color: #74818a;
+  color: #4f5f68;
   font-size: .78rem;
 }
 
@@ -1698,7 +1698,7 @@
 
 .progress-overview-summary {
   margin: .55rem 0 .6rem;
-  color: #60707b;
+  color: #4f5f68;
   font-size: .84rem;
 }
 
@@ -1721,7 +1721,7 @@
 }
 
 .progress-event-heading div > span {
-  color: #74818a;
+  color: #4f5f68;
   font-size: .8rem;
 }
 
@@ -1735,11 +1735,12 @@
 
 .progress-event-heading a span {
   color: #ff695d;
+  font-size: 1rem;
 }
 
 .progress-event-summary {
   margin: 1.2rem 0 .55rem;
-  color: #60707b;
+  color: #4f5f68;
   font-size: .82rem;
 }
 
