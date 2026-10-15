@@ -478,7 +478,7 @@ return (
       <div className="crear-resumen-header">
         <div>
           <h2>Plan inicial</h2>
-          <p>
+          <p className="aviso crear-mensaje" role="status">
             Revisa la información antes de crear el evento.
           </p>
         </div>

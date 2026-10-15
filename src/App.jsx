@@ -18,13 +18,14 @@ function ProtectedRoute({ isAuthenticated, children }) {
 function AppShell({ onLogout, children }) {
   const location = useLocation()
   const isHoy = location.pathname === '/hoy'
+  const isEventDetails = location.pathname.startsWith('/evento/')
   const isProgreso = location.pathname === '/progreso'
   const isConfiguracion = location.pathname === '/configuracion'
 
   return (
     <div className="app-shell">
       <aside className="today-sidebar">
-        {isHoy ? (
+        {isHoy || isEventDetails ? (
           <div className="today-logo"><img src="/Logo.png" alt="Eventos al Día" /></div>
         ) : (
           <Link className="today-logo" to="/hoy" aria-label="Eventos al Día, inicio"><img src="/Logo.png" alt="Eventos al Día" /></Link>

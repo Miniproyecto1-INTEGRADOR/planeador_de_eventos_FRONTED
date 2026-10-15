@@ -467,7 +467,7 @@ export default function DetalleEvento() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <div>
           <p style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#08734f', fontWeight: 700 }}>Detalle del evento</p>
-          <h2 style={{ margin: '0.35rem 0 0' }}>{evento.name}</h2>
+          <h1 style={{ margin: '0.35rem 0 0', color: '#182538', fontSize: '1.5rem', lineHeight: 1.1 }}>{evento.name}</h1>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
 
@@ -607,7 +607,7 @@ export default function DetalleEvento() {
                     />
                   ) : <strong>{subtask.title}</strong>}
                   <div style={{ color: '#586464', marginTop: 4 }}>Fecha: {formatDateDMY(subtask.target_date)} · {formatMinutesAsHours(subtask.estimated_minutes)}</div>
-                  <div style={{ marginTop: 8, fontSize: 'calc(0.9rem - 2px)' }}>Estado: {subtask.status === 'done' ? 'Ejecutada' : subtask.status === 'postponed' ? 'Pospuesta' : 'Pendiente'}</div>
+                  <div style={{ marginTop: 8, fontSize: '.9rem' }}>Estado: {subtask.status === 'done' ? 'Ejecutada' : subtask.status === 'postponed' ? 'Pospuesta' : 'Pendiente'}</div>
                   {subtask.status === 'postponed' && subtask.postponed_note && (
                     <p className="subtask-postponed-note">Nota: {subtask.postponed_note}</p>
                   )}

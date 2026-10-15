@@ -248,6 +248,11 @@
   font-size: .8rem;
 }
 
+.crear-resumen-header p.crear-mensaje {
+  color: #065d40;
+  font-size: .875rem;
+}
+
 .crear-tiempo {
   display: flex;
   flex: 0 0 126px;
@@ -826,7 +831,7 @@
 }
 
 .today-sidebar nav a.active span {
-  color: #ff695d;
+  color: #a33e31;
 }
 
 .today-logout {
@@ -1139,7 +1144,7 @@
 
 .today-task > a::after {
   content: ' ↗';
-  color: #ff695d;
+  color: #a33e31;
 }
 
 .today-no-tasks,
@@ -1228,8 +1233,8 @@
 }
 
 .detalle-evento-meta-item span {
-  color: #687676;
-  font-size: .75rem;
+  color: #4f5f68;
+  font-size: .875rem;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -1734,7 +1739,7 @@
 }
 
 .progress-event-heading a span {
-  color: #ff695d;
+  color: #a33e31;
   font-size: 1rem;
 }
 
