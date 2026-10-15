@@ -89,24 +89,36 @@ export default function ProgresoPage() {
                     <p>Resumen de preparación</p>
                     <h2 id="overall-progress-title">Avance general</h2>
                   </div>
-                  <strong>{formatPercent(progresoGeneral.percent)}%</strong>
+                  {progresoGeneral.total > 0
+                    ? <strong>{formatPercent(progresoGeneral.percent)}%</strong>
+                    : <span className="progress-no-data-badge">Sin gestiones</span>}
                 </div>
-                <div className="progress-overview-summary">
-                  {progresoGeneral.done} de {progresoGeneral.total} gestiones ejecutadas en {eventos.length} eventos
-                </div>
-                <div
-                  className="progress-track progress-overview-track"
-                  role="progressbar"
-                  aria-label="Progreso general de todos los eventos"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                  aria-valuenow={progresoGeneral.percent}
-                >
-                  <div style={{ width: `${progresoGeneral.percent}%` }} />
-                </div>
+                {progresoGeneral.total > 0 ? (
+                  <>
+                    <div className="progress-overview-summary">
+                      {progresoGeneral.done} de {progresoGeneral.total} gestiones ejecutadas en {eventos.length} eventos
+                    </div>
+                    <div
+                      className="progress-track progress-overview-track"
+                      role="progressbar"
+                      aria-label="Progreso general de todos los eventos"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                      aria-valuenow={progresoGeneral.percent}
+                    >
+                      <div style={{ width: `${progresoGeneral.percent}%` }} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="progress-no-data progress-overview-empty" role="status">
+                    <strong>Aún no hay gestiones para mostrar</strong>
+                    <span>Añade gestiones a tus eventos para ver aquí su avance.</span>
+                  </div>
+                )}
               </section>
               {eventos.map((evento) => {
                 const porcentaje = Math.min(100, Math.max(0, Number(evento.progreso.percent) || 0))
+                const tieneGestiones = evento.progreso.total > 0
                 return (
                   <article
                     key={evento.id}
@@ -122,21 +134,29 @@ export default function ProgresoPage() {
                         Ver detalle <span aria-hidden="true">↗</span>
                       </Link>
                     </header>
-                    <div className="progress-event-summary">
-                      <span>{evento.progreso.done} de {evento.progreso.total} gestiones ejecutadas</span>
-                      <strong>{formatPercent(porcentaje)}%</strong>
-                    </div>
-                    <div
-                      className="progress-track"
-                      role="progressbar"
-                      aria-label={`Progreso de ${evento.name}`}
-                      aria-valuemin="0"
-                      aria-valuemax="100"
-                      aria-valuenow={porcentaje}
-                    >
-                      <div style={{ width: `${porcentaje}%` }} />
-                    </div>
-                    {evento.progreso.total === 0 && <p className="progress-empty-hint">Añade gestiones para comenzar el seguimiento.</p>}
+                    {tieneGestiones ? (
+                      <>
+                        <div className="progress-event-summary">
+                          <span>{evento.progreso.done} de {evento.progreso.total} gestiones ejecutadas</span>
+                          <strong>{formatPercent(porcentaje)}%</strong>
+                        </div>
+                        <div
+                          className="progress-track"
+                          role="progressbar"
+                          aria-label={`Progreso de ${evento.name}`}
+                          aria-valuemin="0"
+                          aria-valuemax="100"
+                          aria-valuenow={porcentaje}
+                        >
+                          <div style={{ width: `${porcentaje}%` }} />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="progress-no-data progress-event-empty" role="status">
+                        <strong>Sin gestiones asignadas</strong>
+                        <span>Añade gestiones para comenzar el seguimiento.</span>
+                      </div>
+                    )}
                   </article>
                 )
               })}
