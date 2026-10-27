@@ -638,17 +638,97 @@ export default function DetalleEvento() {
                     </>
                   ) : (
                     <>
-                      {subtask.status !== 'pending' ? (
-                        <button onClick={() => cambiarEstado(subtask.id, 'pending')} disabled={actionLoading === subtask.id} style={{ ...subtaskButton, background: '#f1f5f2', color: '#176b56' }}>Pendiente</button>
-                      ) : (
-                        <button onClick={() => cambiarEstado(subtask.id, 'done')} disabled={actionLoading === subtask.id} style={{ ...subtaskButton, background: '#dff8ed', color: '#0f5a3a' }}>Hecha</button>
-                      )}
-                      <button onClick={() => { setEditandoSubtareaId(subtask.id); setTituloSubtareaEditado(subtask.title); setError('') }} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#eef3ff', color: '#2b4d96' }}>Editar</button>
-                      <button onClick={() => abrirReprogramacion(subtask)} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#f1f5f2', color: '#176b56' }}>Reprogramar</button>
-                      {subtask.status === 'pending' && (
-                        <button onClick={() => { setPosponiendoSubtareaId(subtask.id); setNotaPosposicion(''); setError('') }} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#eef3ff', color: '#2b4d96' }}>Posponer</button>
-                      )}
-                      <button onClick={() => eliminarSubtarea(subtask.id)} disabled={Boolean(actionLoading)} style={{ ...subtaskButton, background: '#ffe5e1', color: '#9b2a24' }}>{actionLoading === `delete-${subtask.id}` ? 'Eliminando…' : 'Eliminar'}</button>
+                     {subtask.status !== 'pending' ? (
+    <button
+      onClick={() => cambiarEstado(subtask.id, 'pending')}
+      disabled={actionLoading === subtask.id}
+      style={{
+        ...subtaskButton,
+        background: '#FFF4D6',
+        color: '#854D0E',
+        border: '1px solid #F2D28B',
+      }}
+    >
+      Pendiente
+    </button>
+  ) : (
+    <button
+      onClick={() => cambiarEstado(subtask.id, 'done')}
+      disabled={actionLoading === subtask.id}
+      style={{
+        ...subtaskButton,
+        background: '#15803D',
+        color: '#FFFFFF',
+        border: '1px solid #15803D',
+      }}
+    >
+      Hecha
+    </button>
+  )}
+
+  <button
+    onClick={() => abrirReprogramacion(subtask)}
+    disabled={Boolean(actionLoading)}
+    style={{
+      ...subtaskButton,
+      background: '#FFFFFF',
+      color: '#64748B',
+      border: '1px solid #CBD5E1',
+    }}
+  >
+    Reprogramar
+  </button>
+
+  {subtask.status === 'pending' && (
+    <button
+      onClick={() => {
+        setPosponiendoSubtareaId(subtask.id)
+        setNotaPosposicion('')
+        setError('')
+      }}
+      disabled={Boolean(actionLoading)}
+      style={{
+        ...subtaskButton,
+        background: '#EDE9FE',
+        color: '#6D28D9',
+        border: '1px solid #C4B5FD',
+      }}
+    >
+      Posponer
+    </button>
+  )}
+
+  <button
+    onClick={() => {
+      setEditandoSubtareaId(subtask.id)
+      setTituloSubtareaEditado(subtask.title)
+      setError('')
+    }}
+    disabled={Boolean(actionLoading)}
+    style={{
+      ...subtaskButton,
+      background: '#DBEAFE',
+      color: '#1D4ED8',
+      border: '1px solid #93C5FD',
+    }}
+  >
+    Editar
+  </button>
+
+  <button
+    onClick={() => eliminarSubtarea(subtask.id)}
+    disabled={Boolean(actionLoading)}
+    style={{
+      ...subtaskButton,
+      background: '#FEE2E2',
+      color: '#B91C1C',
+      border: '1px solid #FCA5A5',
+    }}
+  >
+    {actionLoading === `delete-${subtask.id}`
+      ? 'Eliminando…'
+      : 'Eliminar'}
+  </button>
                     </>
                   )}
                 </div>

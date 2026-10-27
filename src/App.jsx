@@ -8,6 +8,7 @@ import ProgresoPage from './pages/ProgresoPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegistroPage from './pages/RegistroPage.jsx'
 import ConfiguracionPage from './pages/ConfiguracionPage.jsx'
+import RestablecerContrasena from './pages/RestablecerContrasena.jsx'
 
 const AUTH_SESSION_VERSION = 'supabase-auth-v1'
 
@@ -71,7 +72,15 @@ function AppRoutes({ isAuthenticated, loginNotice, onLogin, onLogout }) {
         <Route path="/evento/:id" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><DetalleEvento /></AppShell></ProtectedRoute>} />
         <Route path="/progreso" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><ProgresoPage /></AppShell></ProtectedRoute>} />
         <Route path="/configuracion" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><ConfiguracionPage /></AppShell></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to={isAuthenticated ? '/hoy' : '/login'} replace />} />
+        <Route
+  path="/restablecer-contrasena"
+  element={<RestablecerContrasena />}
+/>
+
+<Route
+  path="*"
+  element={<Navigate to={isAuthenticated ? '/hoy' : '/login'} replace />}
+/>
       </Routes>
     </>
   )
