@@ -38,6 +38,7 @@ export default function LoginPage({ onLogin, sessionNotice = '' }) {
 
     try {
       const response = await axios.post(`${API_URL}/login/`, {
+
         email: trimmedEmail,
         password,
       })

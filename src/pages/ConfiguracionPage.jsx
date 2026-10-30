@@ -3,7 +3,7 @@ import axios from 'axios'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { API_URL } from '../utils/apiUrl.js'
 import { getApiErrorMessage, getDailyCapacityConflict } from '../utils/apiError.js'
-import { formatMinutesAsHours } from '../utils/formatters.js'
+import { formatDuration } from '../utils/duration.js'
 
 export default function ConfiguracionPage() {
   const location = useLocation()
@@ -42,7 +42,7 @@ export default function ConfiguracionPage() {
         if (returnContext?.errorMessage) setError(returnContext.errorMessage)
         if (returnContext?.adjustmentSaved) {
           setSuccess(returnContext.capacityConflict
-            ? `Gestión ajustada. Todavía hay ${formatMinutesAsHours(returnContext.capacityConflict.planned_minutes)} planificadas; redistribuye las restantes para aplicar el límite de ${returnContext.pendingLimitHours} h.`
+            ? `Gestión ajustada. Todavía hay ${formatDuration(returnContext.capacityConflict.planned_minutes)} planificadas; redistribuye las restantes para aplicar el límite de ${returnContext.pendingLimitHours} h.`
             : `Gestión ajustada y límite diario actualizado a ${currentLimit} h.`)
         }
         if (returnContext) navigate(location.pathname, { replace: true, state: null })
@@ -124,13 +124,13 @@ export default function ConfiguracionPage() {
             <section className="settings-capacity-conflict" role="alert">
               <h3>El límite nuevo es menor que lo planificado para hoy</h3>
               <p>
-                Hoy tienes {formatMinutesAsHours(capacityConflict.planned_minutes)} planificadas y quieres dejar el límite en {formatMinutesAsHours(capacityConflict.limit_minutes)}.
+                Hoy tienes {formatDuration(capacityConflict.planned_minutes)} planificadas y quieres dejar el límite en {formatDuration(capacityConflict.limit_minutes)}.
                 Reprograma o reduce alguna gestión; después podrás guardar el nuevo límite.
               </p>
               <ul>
                 {capacityConflict.subtasks.map((subtask) => (
                   <li key={subtask.id}>
-                    <span>{subtask.title} · {formatMinutesAsHours(subtask.estimated_minutes)}</span>
+                    <span>{subtask.title} · {formatDuration(subtask.estimated_minutes)}</span>
                     <button
                       type="button"
                       onClick={() => {
