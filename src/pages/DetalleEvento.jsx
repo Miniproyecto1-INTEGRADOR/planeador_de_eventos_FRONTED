@@ -196,7 +196,7 @@ export default function DetalleEvento() {
       return
     }
     if (targetDate > evento.event_date.slice(0, 10)) {
-      setError('La fecha límite de la subtarea no puede ser posterior a la fecha del evento.')
+      setError('No se puede crear una subtarea luego de la fecha del evento.')
       return
     }
     if (!isValidDuration(estimatedDuration.hours, estimatedDuration.minutes)) {
@@ -341,7 +341,7 @@ export default function DetalleEvento() {
   const guardarReprogramacion = async (targetDate = reprogramDate, duration = reprogramDuration) => {
     if (!reprogramTask) return
     if (targetDate > evento.event_date.slice(0, 10)) {
-      setError('La fecha límite de la subtarea no puede ser posterior a la fecha del evento.')
+      setError('No se puede crear una subtarea luego de la fecha del evento.')
       return
     }
     if (!targetDate || !isValidDuration(duration.hours, duration.minutes)) {

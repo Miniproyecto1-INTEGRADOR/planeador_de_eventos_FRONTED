@@ -280,7 +280,7 @@ export default function CrearEvento() {
 
     const fechaEvento = evento.event_date.slice(0, 10)
     if (subtareasValidas.some((item) => item.target_date && item.target_date > fechaEvento)) {
-      setError('La fecha límite de cada gestión no puede ser posterior a la fecha del evento.')
+      setError('No se puede crear una subtarea luego de la fecha del evento.')
       return
     }
 
