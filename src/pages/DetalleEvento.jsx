@@ -195,6 +195,10 @@ export default function DetalleEvento() {
       setError('Selecciona una fecha límite para la subtarea.')
       return
     }
+    if (targetDate > evento.event_date.slice(0, 10)) {
+      setError('La fecha límite de la subtarea no puede ser posterior a la fecha del evento.')
+      return
+    }
     if (!isValidDuration(estimatedDuration.hours, estimatedDuration.minutes)) {
       setError('Indica una duración mayor que cero y verifica que los minutos estén entre 0 y 59.')
       return
@@ -336,6 +340,10 @@ export default function DetalleEvento() {
 
   const guardarReprogramacion = async (targetDate = reprogramDate, duration = reprogramDuration) => {
     if (!reprogramTask) return
+    if (targetDate > evento.event_date.slice(0, 10)) {
+      setError('La fecha límite de la subtarea no puede ser posterior a la fecha del evento.')
+      return
+    }
     if (!targetDate || !isValidDuration(duration.hours, duration.minutes)) {
       setError('Elige una fecha y una duración mayor que cero; los minutos deben estar entre 0 y 59.')
       return
@@ -582,6 +590,7 @@ export default function DetalleEvento() {
               required
               value={targetDate}
               onValueChange={setTargetDate}
+              max={evento.event_date.slice(0, 10)}
               inputStyle={{ width: '100%', minWidth: 0, padding: '0.75rem 2.8rem 0.75rem 0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }}
             />
             <div>
@@ -791,6 +800,7 @@ export default function DetalleEvento() {
                   required
                   value={reprogramDate}
                   onValueChange={setReprogramDate}
+                  max={evento.event_date.slice(0, 10)}
                 />
               </label>
               <div>
@@ -828,6 +838,7 @@ export default function DetalleEvento() {
                       <DatePicker
                         ariaLabel="Fecha alternativa"
                         value={alternativeDate}
+                        max={evento.event_date.slice(0, 10)}
                         onValueChange={setAlternativeDate}
                       />
                     </label>

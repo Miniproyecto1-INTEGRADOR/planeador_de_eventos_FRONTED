@@ -277,6 +277,13 @@ export default function CrearEvento() {
       }
       return
     }
+
+    const fechaEvento = evento.event_date.slice(0, 10)
+    if (subtareasValidas.some((item) => item.target_date && item.target_date > fechaEvento)) {
+      setError('La fecha límite de cada gestión no puede ser posterior a la fecha del evento.')
+      return
+    }
+
     setCargando(true)
 
     try {
@@ -712,6 +719,7 @@ return (
                 id={`fecha-${index}`}
                 ariaLabel="Fecha límite"
                 value={tarea.target_date}
+                max={evento.event_date.slice(0, 10)}
                 onValueChange={(value) => actualizarSubtarea(index, 'target_date', value)}
               />
             </div>
@@ -802,6 +810,7 @@ return (
                 <DatePicker
                   ariaLabel="Nueva fecha para esta gestión"
                   value={fechaAlternativaPlan}
+                  max={evento.event_date.slice(0, 10)}
                   onValueChange={setFechaAlternativaPlan}
                 />
               </label>
