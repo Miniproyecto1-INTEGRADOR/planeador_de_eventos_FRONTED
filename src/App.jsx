@@ -50,7 +50,7 @@ function AppShell({ onLogout, children }) {
 function AppRoutes({ isAuthenticated, loginNotice, onLogin, onLogout }) {
   const location = useLocation()
 
-  const showStandaloneLogo = !['/login', '/registro'].includes(location.pathname)
+  const showStandaloneLogo = !['/login', '/registro', '/restablecer-contrasena'].includes(location.pathname)
     && !['/hoy', '/crear', '/progreso', '/configuracion'].includes(location.pathname)
     && !location.pathname.startsWith('/evento/')
 
