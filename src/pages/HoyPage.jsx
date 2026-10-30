@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
-import { formatDateDMY } from '../utils/formatters.js'
-import { formatDuration } from '../utils/duration.js'
+import { formatDateDMY, formatMinutesAsHours } from '../utils/formatters.js'
 
 const grupos = [
   ['vencidas', 'Vencidas'],
@@ -104,7 +103,7 @@ export default function HoyPage() {
             </select>
           </div>
           <p><strong>{total}</strong> gestiones en la vista</p>
-          <p><strong>{formatDuration(horasPendientesHoy)}</strong> pendientes hoy</p>
+          <p><strong>{formatMinutesAsHours(horasPendientesHoy)}</strong> pendientes hoy</p>
         </section>
 
         {error && <div className="today-error" role="alert">{error}<button type="button" onClick={cargarDatos}>Reintentar</button></div>}
@@ -143,7 +142,7 @@ export default function HoyPage() {
                           <p className="today-task-note">Nota: {tarea.postponed_note}</p>
                         )}
                         <span className={`today-status status-${tarea.status}`}>{estado}</span>
-                        <span className="today-hours">{formatDuration(tarea.estimated_minutes)}</span>
+                        <span className="today-hours">{formatMinutesAsHours(tarea.estimated_minutes)}</span>
                         <Link
                           to="/evento/subtareas"
                           aria-label={`Ver detalle de ${tarea.title} en ${nombre}`}

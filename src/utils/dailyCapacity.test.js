@@ -14,7 +14,3 @@ test('projects a reduced duration against the requested daily limit', () => {
 test('removes a task from today when it is moved to another date', () => {
   assert.equal(getProjectedDailyMinutes(subtasks, 'one', '2026-10-09', '2026-10-10', 180), 60)
 })
-
-test('projects exact integer minutes when updating a task duration', () => {
-  assert.equal(getProjectedDailyMinutes(subtasks, 'one', '2026-10-09', '2026-10-09', 135), 195)
-})

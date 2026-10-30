@@ -4,10 +4,7 @@ import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
 import { getApiErrorMessage, getDailyCapacityConflict } from '../utils/apiError.js'
 import { getProjectedDailyMinutes } from '../utils/dailyCapacity.js'
-import { formatDateDMY, formatPercent } from '../utils/formatters.js'
-import { durationToMinutes, formatDuration, isValidDuration, minutesToDuration } from '../utils/duration.js'
-import DurationFields from '../components/DurationFields.jsx'
-import DatePicker from '../DatePicker.jsx'
+import { formatDateDMY, formatMinutesAsHours, formatPercent } from '../utils/formatters.js'
 
 const panelStyle = {
   maxWidth: 1100,
@@ -74,7 +71,7 @@ export default function DetalleEvento() {
   const [posponiendoSubtareaId, setPosponiendoSubtareaId] = useState('')
   const [notaPosposicion, setNotaPosposicion] = useState('')
   const [targetDate, setTargetDate] = useState('')
-  const [estimatedDuration, setEstimatedDuration] = useState({ hours: '1', minutes: '0' })
+  const [estimatedHours, setEstimatedHours] = useState(1)
   const [mostrarFormularioSubtarea, setMostrarFormularioSubtarea] = useState(false)
   const [editando, setEditando] = useState(false)
   const [formEvento, setFormEvento] = useState({ name: '', event_type: 'Bodas', event_date: '' })
@@ -86,9 +83,9 @@ export default function DetalleEvento() {
   const [actionLoading, setActionLoading] = useState('')
   const [reprogramTask, setReprogramTask] = useState(null)
   const [reprogramDate, setReprogramDate] = useState('')
-  const [reprogramDuration, setReprogramDuration] = useState({ hours: '1', minutes: '0' })
+  const [reprogramHours, setReprogramHours] = useState('1')
   const [alternativeDate, setAlternativeDate] = useState('')
-  const [reducedDuration, setReducedDuration] = useState({ hours: '0', minutes: '30' })
+  const [reducedHours, setReducedHours] = useState('0.5')
   const [overload, setOverload] = useState(null)
   const [dailyLimitContext, setDailyLimitContext] = useState(null)
   const [confirmarEliminacion, setConfirmarEliminacion] = useState(false)
@@ -196,11 +193,11 @@ export default function DetalleEvento() {
       return
     }
     if (targetDate > evento.event_date.slice(0, 10)) {
-      setError('No se puede crear una subtarea luego de la fecha del evento.')
+      setError('La fecha límite de la subtarea no puede ser posterior a la fecha del evento.')
       return
     }
-    if (!isValidDuration(estimatedDuration.hours, estimatedDuration.minutes)) {
-      setError('Indica una duración mayor que cero y verifica que los minutos estén entre 0 y 59.')
+    if (Number(estimatedHours) <= 0) {
+      setError('Indica un tiempo estimado mayor que 0 horas.')
       return
     }
     setActionLoading('create')
@@ -209,19 +206,19 @@ export default function DetalleEvento() {
         title: titulo,
         description: 'Gestión logística',
         target_date: targetDate,
-        estimated_minutes: durationToMinutes(estimatedDuration.hours, estimatedDuration.minutes),
+        estimated_minutes: Number(estimatedHours) * 60,
         status: 'pending',
       })
       setTitulo('')
       setTargetDate('')
-      setEstimatedDuration({ hours: '1', minutes: '0' })
+      setEstimatedHours(1)
       setMostrarFormularioSubtarea(false)
       setSuccess('Gestión añadida al plan del evento.')
       await cargarDatos()
     } catch (err) {
       const detail = err?.response?.data?.detail
       if (err?.response?.status === 409 && detail?.code === 'daily_capacity_exceeded') {
-        setError(`Quedarías con ${formatDuration(detail.planned_minutes)} planificadas (límite ${formatDuration(detail.limit_minutes)}). Cambia la fecha o reduce la duración y vuelve a guardar.`)
+        setError(`Quedarías con ${formatMinutesAsHours(detail.planned_minutes)} planificadas (límite ${formatMinutesAsHours(detail.limit_minutes)}). Cambia la fecha o reduce las horas y vuelve a guardar.`)
       } else {
         setError(getApiErrorMessage(err, 'Se perdió la conexión con el servidor, por favor vuelva a intentarlo.'))
       }
@@ -296,9 +293,8 @@ export default function DetalleEvento() {
     setAlternativeDate('')
     setReprogramTask(subtask)
     setReprogramDate(subtask.target_date || evento.event_date.slice(0, 10))
-    const currentMinutes = Number(subtask.estimated_minutes ?? 60)
-    setReprogramDuration(minutesToDuration(currentMinutes))
-    setReducedDuration(minutesToDuration(Math.max(1, currentMinutes - 30)))
+    setReprogramHours(String(Number(subtask.estimated_minutes || 60) / 60))
+    setReducedHours(String(Math.max(0.5, Number(subtask.estimated_minutes || 60) / 60 - 0.5)))
   }
 
   const abrirSubtareaSolicitada = useEffectEvent((subtask, limitContext) => {
@@ -307,9 +303,9 @@ export default function DetalleEvento() {
 
     setDailyLimitContext(limitContext)
     setOverload({ planned_minutes: limitContext.planned_minutes, limit_minutes: limitContext.limit_minutes })
-    const minutesToReduce = Math.max(1, limitContext.planned_minutes - limitContext.limit_minutes)
-    const currentMinutes = Number(subtask.estimated_minutes ?? 60)
-    setReducedDuration(minutesToDuration(Math.max(1, currentMinutes - minutesToReduce)))
+    const hoursToReduce = (limitContext.planned_minutes - limitContext.limit_minutes) / 60
+    const currentHours = Number(subtask.estimated_minutes || 60) / 60
+    setReducedHours(String(Math.max(0.5, currentHours - hoursToReduce)))
   })
 
   useEffect(() => {
@@ -338,18 +334,15 @@ export default function DetalleEvento() {
     setAlternativeDate('')
   }
 
-  const guardarReprogramacion = async (targetDate = reprogramDate, duration = reprogramDuration) => {
+  const guardarReprogramacion = async (targetDate = reprogramDate, hours = reprogramHours) => {
     if (!reprogramTask) return
-    if (targetDate > evento.event_date.slice(0, 10)) {
-      setError('No se puede crear una subtarea luego de la fecha del evento.')
-      return
-    }
-    if (!targetDate || !isValidDuration(duration.hours, duration.minutes)) {
-      setError('Elige una fecha y una duración mayor que cero; los minutos deben estar entre 0 y 59.')
+    const hoursValue = Number(hours)
+    if (!targetDate || !Number.isFinite(hoursValue) || hoursValue < 0.5) {
+      setError('Elige una fecha y una duración de al menos media hora.')
       return
     }
 
-    const estimatedMinutes = durationToMinutes(duration.hours, duration.minutes)
+    const estimatedMinutes = Math.round(hoursValue * 60)
     setError('')
     setSuccess('')
     setOverload(null)
@@ -368,11 +361,11 @@ export default function DetalleEvento() {
           projectedMinutes >= dailyLimitContext.planned_minutes
         ) {
           const otherMinutes = dailyLimitContext.planned_minutes - Number(reprogramTask.estimated_minutes || 0)
-          setError(`Con este ajuste quedarían ${formatDuration(projectedMinutes)}; para guardar el límite de ${formatDuration(dailyLimitContext.limit_minutes)}, mueve la gestión o reduce su duración.`)
+          const maximumHours = Math.floor((dailyLimitContext.limit_minutes - otherMinutes) / 30) / 2
+          setError(`Con este ajuste quedarían ${formatMinutesAsHours(projectedMinutes)}; para guardar el límite de ${formatMinutesAsHours(dailyLimitContext.limit_minutes)}, mueve la gestión o reduce su duración.`)
           setReprogramDate(targetDate)
-          setReprogramDuration(duration)
-          const maximumMinutes = Math.floor((dailyLimitContext.limit_minutes - otherMinutes))
-          setReducedDuration(minutesToDuration(Math.max(1, Math.min(estimatedMinutes - 1, maximumMinutes))))
+          setReprogramHours(String(hoursValue))
+          setReducedHours(String(Math.max(0.5, Math.min(hoursValue - 0.5, maximumHours))))
           setOverload({ planned_minutes: projectedMinutes, limit_minutes: dailyLimitContext.limit_minutes })
           return
         }
@@ -416,8 +409,8 @@ export default function DetalleEvento() {
       const detail = getDailyCapacityConflict(requestError)
       if (detail) {
         setReprogramDate(targetDate)
-        setReprogramDuration(duration)
-        setReducedDuration(minutesToDuration(Math.max(1, estimatedMinutes - 30)))
+        setReprogramHours(String(hoursValue))
+        setReducedHours(String(Math.max(0.5, hoursValue - 0.5)))
         setOverload(detail)
       } else {
         setError(getApiErrorMessage(requestError, 'No pudimos reprogramar esta gestión.'))
@@ -472,7 +465,7 @@ export default function DetalleEvento() {
   return (
     <main style={panelStyle}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-        <div className="subtask-create-duration">
+        <div>
           <p style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#08734f', fontWeight: 700 }}>Detalle del evento</p>
           <h1 style={{ margin: '0.35rem 0 0', color: '#182538', fontSize: '1.5rem', lineHeight: 1.1 }}>{evento.name}</h1>
         </div>
@@ -530,13 +523,7 @@ export default function DetalleEvento() {
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 700 }}>Fecha</label>
-              <DatePicker
-                dateTime
-                ariaLabel="Fecha y hora del evento"
-                value={formEvento.event_date}
-                onValueChange={(value) => setFormEvento((prev) => ({ ...prev, event_date: value }))}
-                inputStyle={{ width: '100%', minWidth: 0, padding: '0.75rem 2.8rem 0.75rem 0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }}
-              />
+              <input type="datetime-local" value={formEvento.event_date} onChange={(e) => setFormEvento((prev) => ({ ...prev, event_date: e.target.value }))} style={{ width: '100%', padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
             </div>
           </div>
 
@@ -583,26 +570,12 @@ export default function DetalleEvento() {
       {mostrarFormularioSubtarea && (
         <div style={cardStyle}>
           <h2 style={{ marginTop: 0 }}>Agregar subtarea</h2>
-          <div className="subtask-create-grid">
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.75rem' }}>
             <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Título de la subtarea" style={{ padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
-            <DatePicker
-              ariaLabel="Fecha límite de la subtarea"
-              required
-              value={targetDate}
-              onValueChange={setTargetDate}
-              max={evento.event_date.slice(0, 10)}
-              inputStyle={{ width: '100%', minWidth: 0, padding: '0.75rem 2.8rem 0.75rem 0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }}
-            />
-            <div>
-              <span className="duration-field-title">Duración estimada</span>
-              <DurationFields
-                idPrefix="new-subtask-duration"
-                hours={estimatedDuration.hours}
-                minutes={estimatedDuration.minutes}
-                onHoursChange={(hours) => setEstimatedDuration((current) => ({ ...current, hours }))}
-                onMinutesChange={(minutes) => setEstimatedDuration((current) => ({ ...current, minutes }))}
-                showPreview
-              />
+            <input type="date" aria-label="Fecha límite de la subtarea" required max={evento.event_date.slice(0, 10)} value={targetDate} onChange={(e) => setTargetDate(e.target.value)} style={{ padding: '0.75rem', borderRadius: 10, border: '1px solid #dfe7e6' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 0.25rem', border: '1px solid #dfe7e6', borderRadius: 10, background: '#fff' }}>
+              <input type="number" min="0.5" step="0.5" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} style={{ border: 'none', outline: 'none', width: '100%', padding: '0.75rem 0.25rem 0.75rem 0.75rem', background: 'transparent' }} />
+              <span style={{ color: '#586464', fontWeight: 700, paddingRight: '0.75rem' }}>h</span>
             </div>
           </div>
           <div style={{ marginTop: '0.75rem' }}>
@@ -633,7 +606,7 @@ export default function DetalleEvento() {
                       style={{ minWidth: 'min(280px, 70vw)', padding: '0.45rem 0.6rem', border: '1px solid #cdd9d4', borderRadius: 6, font: 'inherit' }}
                     />
                   ) : <strong>{subtask.title}</strong>}
-                  <div style={{ color: '#586464', marginTop: 4 }}>Fecha: {formatDateDMY(subtask.target_date)} · {formatDuration(subtask.estimated_minutes)}</div>
+                  <div style={{ color: '#586464', marginTop: 4 }}>Fecha: {formatDateDMY(subtask.target_date)} · {formatMinutesAsHours(subtask.estimated_minutes)}</div>
                   <div style={{ marginTop: 8, fontSize: '.9rem' }}>Estado: {subtask.status === 'done' ? 'Ejecutada' : subtask.status === 'postponed' ? 'Pospuesta' : 'Pendiente'}</div>
                   {subtask.status === 'postponed' && subtask.postponed_note && (
                     <p className="subtask-postponed-note">Nota: {subtask.postponed_note}</p>
@@ -795,25 +768,12 @@ export default function DetalleEvento() {
             <form onSubmit={(submitEvent) => { submitEvent.preventDefault(); guardarReprogramacion() }}>
               <label>
                 Nueva fecha
-                <DatePicker
-                  ariaLabel="Nueva fecha"
-                  required
-                  value={reprogramDate}
-                  onValueChange={setReprogramDate}
-                  max={evento.event_date.slice(0, 10)}
-                />
+                <input type="date" required max={evento.event_date.slice(0, 10)} value={reprogramDate} onChange={(event) => setReprogramDate(event.target.value)} />
               </label>
-              <div>
-                <span className="duration-field-title">Duración estimada</span>
-                <DurationFields
-                  idPrefix="reprogram-duration"
-                  hours={reprogramDuration.hours}
-                  minutes={reprogramDuration.minutes}
-                  onHoursChange={(hours) => setReprogramDuration((current) => ({ ...current, hours }))}
-                  onMinutesChange={(minutes) => setReprogramDuration((current) => ({ ...current, minutes }))}
-                  showPreview
-                />
-              </div>
+              <label>
+                Duración estimada (horas)
+                <input type="number" required min="0.5" step="0.5" value={reprogramHours} onChange={(event) => setReprogramHours(event.target.value)} />
+              </label>
               {error && <p className="state-message state-error" role="alert">{error}</p>}
               <div className="reprogram-form-actions">
                 <button className="reprogram-primary" type="submit" disabled={Boolean(actionLoading)}>
@@ -827,7 +787,7 @@ export default function DetalleEvento() {
               <>
                 <div className="reprogram-conflict" role="alert">
                   <h3>Conflicto de sobrecarga</h3>
-                  <strong>Quedarías con {formatDuration(overload.planned_minutes)} planificadas (límite {formatDuration(overload.limit_minutes)}).</strong>
+                  <strong>Quedarías con {formatMinutesAsHours(overload.planned_minutes)} planificadas (límite {formatMinutesAsHours(overload.limit_minutes)}).</strong>
                 </div>
                 <p className="reprogram-question">¿Cómo quieres solucionarlo?</p>
                 <div className="reprogram-options">
@@ -835,39 +795,19 @@ export default function DetalleEvento() {
                     <h3>Mover a otro día</h3>
                     <label>
                       Fecha alternativa
-                      <DatePicker
-                        ariaLabel="Fecha alternativa"
-                        value={alternativeDate}
-                        max={evento.event_date.slice(0, 10)}
-                        onValueChange={setAlternativeDate}
-                      />
+                      <input type="date" max={evento.event_date.slice(0, 10)} value={alternativeDate} onChange={(event) => setAlternativeDate(event.target.value)} />
                     </label>
-                    <button type="button" onClick={() => guardarReprogramacion(alternativeDate, reprogramDuration)} disabled={!alternativeDate || alternativeDate === reprogramDate || Boolean(actionLoading)}>
+                    <button type="button" onClick={() => guardarReprogramacion(alternativeDate, reprogramHours)} disabled={!alternativeDate || alternativeDate === reprogramDate || Boolean(actionLoading)}>
                       Guardar en esa fecha
                     </button>
                   </section>
                   <section>
-                    <h3>Reducir duración</h3>
-                    <DurationFields
-                      idPrefix="reduced-reprogram-duration"
-                      hours={reducedDuration.hours}
-                      minutes={reducedDuration.minutes}
-                      onHoursChange={(hours) => setReducedDuration((current) => ({ ...current, hours }))}
-                      onMinutesChange={(minutes) => setReducedDuration((current) => ({ ...current, minutes }))}
-                      showPreview
-                    />
-                    <button
-                      type="button"
-                      onClick={() => guardarReprogramacion(reprogramDate, reducedDuration)}
-                      disabled={
-                        !isValidDuration(reducedDuration.hours, reducedDuration.minutes) ||
-                        durationToMinutes(reducedDuration.hours, reducedDuration.minutes) >= durationToMinutes(
-                          reprogramDuration.hours,
-                          reprogramDuration.minutes,
-                        ) ||
-                        Boolean(actionLoading)
-                      }
-                    >
+                    <h3>Reducir horas</h3>
+                    <label>
+                      Nueva duración
+                      <input type="number" min="0.5" step="0.5" value={reducedHours} onChange={(event) => setReducedHours(event.target.value)} />
+                    </label>
+                    <button type="button" onClick={() => guardarReprogramacion(reprogramDate, reducedHours)} disabled={Number(reducedHours) >= Number(reprogramHours) || Boolean(actionLoading)}>
                       Guardar duración reducida
                     </button>
                   </section>

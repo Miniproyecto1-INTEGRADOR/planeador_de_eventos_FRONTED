@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
 import { getApiErrorMessage } from '../utils/apiError.js'
-import { durationToMinutes, formatDuration, isValidDuration } from '../utils/duration.js'
-import DurationFields from '../components/DurationFields.jsx'
-import DatePicker from '../DatePicker.jsx'
+import { formatMinutesAsHours } from '../utils/formatters.js'
 
 const valoresIniciales = {
   name: '',
@@ -15,7 +13,7 @@ const valoresIniciales = {
 }
 
 const subtareaBase = [
-  { title: '', target_date: '', duration_hours: '', duration_minutes: '' },
+  { title: '', target_date: '', estimated_hours: '' },
 ]
 
 const tiposEvento = [
@@ -48,29 +46,15 @@ export default function CrearEvento() {
   const [error, setError] = useState('')
   const [conflictoPlan, setConflictoPlan] = useState(null)
   const [fechaAlternativaPlan, setFechaAlternativaPlan] = useState('')
-  const [duracionAlternativaPlan, setDuracionAlternativaPlan] = useState({ hours: '', minutes: '' })
+  const [horasAlternativasPlan, setHorasAlternativasPlan] = useState('')
   const [tiposAbierto, setTiposAbierto] = useState(false)
-  const [calendarioAbierto, setCalendarioAbierto] = useState(false)
-  const [mesCalendario, setMesCalendario] = useState(() => {
-    const hoy = new Date()
-    return new Date(hoy.getFullYear(), hoy.getMonth(), 1)
-  })
-  const [horaEvento, setHoraEvento] = useState('05')
-  const [minutoEvento, setMinutoEvento] = useState('00')
-  const [periodoEvento, setPeriodoEvento] = useState('PM')
   const tiposRef = useRef(null)
-  const calendarioRef = useRef(null)
 
   const tieneCambios = Boolean(
     evento.name.trim() ||
     evento.event_date ||
     evento.color !== valoresIniciales.color ||
-    subtareas.some((tarea) => (
-      tarea.title.trim() ||
-      tarea.target_date ||
-      tarea.duration_hours !== '' ||
-      tarea.duration_minutes !== ''
-    )),
+    subtareas.some((tarea) => tarea.title.trim() || tarea.target_date || tarea.estimated_hours),
   )
 
   useEffect(() => {
@@ -95,34 +79,13 @@ export default function CrearEvento() {
     return () => document.removeEventListener('mousedown', cerrarTiposAlHacerClickFuera)
   }, [tiposAbierto])
 
-  useEffect(() => {
-    if (!calendarioAbierto) return undefined
-
-    const cerrarCalendarioExterior = (event) => {
-      if (!calendarioRef.current?.contains(event.target)) setCalendarioAbierto(false)
-    }
-    const cerrarCalendarioEscape = (event) => {
-      if (event.key === 'Escape') setCalendarioAbierto(false)
-    }
-
-    document.addEventListener('mousedown', cerrarCalendarioExterior)
-    document.addEventListener('keydown', cerrarCalendarioEscape)
-    return () => {
-      document.removeEventListener('mousedown', cerrarCalendarioExterior)
-      document.removeEventListener('keydown', cerrarCalendarioEscape)
-    }
-  }, [calendarioAbierto])
-
   const volverAtras = () => {
     if (tieneCambios && !window.confirm('Tienes datos sin guardar. ¿Deseas salir sin crear el evento?')) return
     navigate('/hoy')
   }
 
   const totalTiempo = useMemo(
-    () => subtareas.reduce(
-      (total, item) => total + (durationToMinutes(item.duration_hours, item.duration_minutes) ?? 0),
-      0,
-    ),
+    () => subtareas.reduce((total, item) => total + Number(item.estimated_hours || 0), 0),
     [subtareas],
   )
 
@@ -132,7 +95,7 @@ export default function CrearEvento() {
         pos === index
           ? {
               ...tarea,
-              [campo]: valor,
+              [campo]: campo === 'estimated_hours' ? (valor === '' ? '' : Number(valor)) : valor,
             }
           : tarea,
       ),
@@ -140,93 +103,11 @@ export default function CrearEvento() {
   }
 
   const agregarSubtarea = () => {
-    setSubtareas((actuales) => [
-      ...actuales,
-      { title: '', target_date: '', duration_hours: '', duration_minutes: '' },
-    ])
+    setSubtareas((actuales) => [...actuales, { title: '', target_date: '', estimated_hours: '' }])
   }
 
   const eliminarSubtarea = (index) => {
     setSubtareas((actuales) => actuales.filter((_, pos) => pos !== index))
-  }
-
-  const fechaSeleccionada = evento.event_date
-    ? new Date(`${evento.event_date.slice(0, 10)}T12:00:00`)
-    : null
-  const hoy = new Date()
-  const fechaMinima = [
-    hoy.getFullYear(),
-    String(hoy.getMonth() + 1).padStart(2, '0'),
-    String(hoy.getDate()).padStart(2, '0'),
-  ].join('-')
-  const mesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
-  const diasCalendario = useMemo(() => {
-    const primerDia = new Date(mesCalendario.getFullYear(), mesCalendario.getMonth(), 1)
-    const desplazamiento = (primerDia.getDay() + 6) % 7
-    return Array.from({ length: 42 }, (_, index) => (
-      new Date(mesCalendario.getFullYear(), mesCalendario.getMonth(), index - desplazamiento + 1)
-    ))
-  }, [mesCalendario])
-  const meses = new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' })
-  const tituloMesCalendario = (date) => {
-    const titulo = meses.format(date)
-    return `${titulo.charAt(0).toLocaleUpperCase('es-MX')}${titulo.slice(1)}`
-  }
-  const actualizarFechaHoraEvento = (date, hour = horaEvento, minute = minutoEvento, period = periodoEvento) => {
-    if (!date) return
-    let hour24 = Number(hour) % 12
-    if (period === 'PM') hour24 += 12
-    const localDate = [
-      date.getFullYear(),
-      String(date.getMonth() + 1).padStart(2, '0'),
-      String(date.getDate()).padStart(2, '0'),
-    ].join('-')
-    const localTime = `${String(hour24).padStart(2, '0')}:${minute}`
-    setEvento((actual) => ({ ...actual, event_date: `${localDate}T${localTime}` }))
-  }
-
-  const cambiarFechaHoraManual = (value) => {
-    if (value && value.slice(0, 10) < fechaMinima) return
-    setEvento((actual) => ({ ...actual, event_date: value }))
-    if (!value) return
-
-    const [datePart, timePart] = value.split('T')
-    const [hours, minutes] = timePart.split(':').map(Number)
-    setHoraEvento(String(hours % 12 || 12).padStart(2, '0'))
-    setMinutoEvento(String(minutes).padStart(2, '0'))
-    setPeriodoEvento(hours >= 12 ? 'PM' : 'AM')
-
-    const date = new Date(`${datePart}T12:00:00`)
-    setMesCalendario(new Date(date.getFullYear(), date.getMonth(), 1))
-  }
-
-  const actualizarHoraEvento = (field, value) => {
-    const nextHour = field === 'hour' ? value : horaEvento
-    const nextMinute = field === 'minute' ? value : minutoEvento
-    const nextPeriod = field === 'period' ? value : periodoEvento
-
-    if (field === 'hour') setHoraEvento(value)
-    if (field === 'minute') setMinutoEvento(value)
-    if (field === 'period') setPeriodoEvento(value)
-    if (fechaSeleccionada) actualizarFechaHoraEvento(fechaSeleccionada, nextHour, nextMinute, nextPeriod)
-  }
-
-  const seleccionarDiaEvento = (date) => {
-    const isoDate = [
-      date.getFullYear(),
-      String(date.getMonth() + 1).padStart(2, '0'),
-      String(date.getDate()).padStart(2, '0'),
-    ].join('-')
-    if (isoDate < fechaMinima) return
-    actualizarFechaHoraEvento(date)
-    setMesCalendario(new Date(date.getFullYear(), date.getMonth(), 1))
-  }
-
-  const cambiarMesCalendario = (amount) => {
-    setMesCalendario((current) => {
-      const next = new Date(current.getFullYear(), current.getMonth() + amount, 1)
-      return next < mesActual ? mesActual : next
-    })
   }
 
   const guardarEvento = async (subtareasPlan = subtareas) => {
@@ -246,16 +127,13 @@ export default function CrearEvento() {
       return
     }
 
+    const fechaEvento = evento.event_date.slice(0, 10)
+
     const subtareasConContenido = subtareasPlan.filter(
-      (item) => (
-        item.title.trim() ||
-        item.target_date ||
-        item.duration_hours !== '' ||
-        item.duration_minutes !== ''
-      ),
+      (item) => item.title.trim() || item.target_date || item.estimated_hours,
     )
     const subtareasValidas = subtareasConContenido.filter(
-      (item) => item.title.trim() && isValidDuration(item.duration_hours, item.duration_minutes),
+      (item) => item.title.trim() && Number(item.estimated_hours) > 0,
     )
 
     if (!subtareasConContenido.length) {
@@ -264,23 +142,20 @@ export default function CrearEvento() {
     }
     if (subtareasValidas.length !== subtareasConContenido.length) {
       const faltaTitulo = subtareasConContenido.some((item) => !item.title.trim())
-      const faltaDuracionValida = subtareasConContenido.some(
-        (item) => !isValidDuration(item.duration_hours, item.duration_minutes),
-      )
+      const faltaHorasValidas = subtareasConContenido.some((item) => Number(item.estimated_hours) <= 0)
 
-      if (faltaTitulo && faltaDuracionValida) {
-        setError('Completa el título y asigna una duración mayor a cero; los minutos deben estar entre 0 y 59.')
+      if (faltaTitulo && faltaHorasValidas) {
+        setError('Completa el título y asigna un número de horas mayor a 0 en cada gestión que hayas comenzado.')
       } else if (faltaTitulo) {
         setError('Completa el título de cada gestión que hayas comenzado.')
       } else {
-        setError('Asigna una duración mayor a cero y verifica que los minutos estén entre 0 y 59.')
+        setError('Asigna un número de horas mayor a 0 en cada gestión que hayas comenzado.')
       }
       return
     }
-
-    const fechaEvento = evento.event_date.slice(0, 10)
-    if (subtareasValidas.some((item) => item.target_date && item.target_date > fechaEvento)) {
-      setError('No se puede crear una subtarea luego de la fecha del evento.')
+    const subtareaPosterior = subtareasValidas.find((tarea) => tarea.target_date && tarea.target_date > fechaEvento)
+    if (subtareaPosterior) {
+      setError(`La fecha de "${subtareaPosterior.title.trim()}" no puede ser posterior a la fecha del evento.`)
       return
     }
 
@@ -296,7 +171,7 @@ export default function CrearEvento() {
           title: tarea.title.trim(),
           description: `Gestión logística para ${evento.name.trim()}`,
           target_date: tarea.target_date || evento.event_date.split('T')[0],
-          estimated_minutes: durationToMinutes(tarea.duration_hours, tarea.duration_minutes),
+          estimated_minutes: Number(tarea.estimated_hours) * 60,
           status: 'pending',
         })),
       }
@@ -319,14 +194,7 @@ export default function CrearEvento() {
         const conflictingTask = subtareasValidas[Number(detail.subtask_index)]
         const taskIndex = conflictingTask ? subtareasPlan.indexOf(conflictingTask) : -1
         setFechaAlternativaPlan('')
-        const currentMinutes = conflictingTask
-          ? durationToMinutes(conflictingTask.duration_hours, conflictingTask.duration_minutes)
-          : 60
-        const reducedMinutes = Math.max(1, currentMinutes - 30)
-        setDuracionAlternativaPlan({
-          hours: String(Math.floor(reducedMinutes / 60)),
-          minutes: String(reducedMinutes % 60),
-        })
+        setHorasAlternativasPlan(String(Math.max(0.5, Number(conflictingTask?.estimated_hours || 1) - 0.5)))
         setConflictoPlan({ ...detail, taskIndex })
       } else {
         const mensajeError = getApiErrorMessage(
@@ -347,15 +215,13 @@ export default function CrearEvento() {
       return
     }
 
-    const cambios = field === 'duration'
+    const subtareasActualizadas = subtareas.map((tarea, index) => index === conflictoPlan.taskIndex
       ? {
-          duration_hours: String(Math.floor(value / 60)),
-          duration_minutes: String(value % 60),
+          ...tarea,
+          [field]: field === 'estimated_hours' ? Number(value) : value,
         }
-      : { [field]: value }
-    const subtareasActualizadas = subtareas.map((tarea, index) => (
-      index === conflictoPlan.taskIndex ? { ...tarea, ...cambios } : tarea
-    ))
+      : tarea,
+    )
     setSubtareas(subtareasActualizadas)
     setConflictoPlan(null)
     setFechaAlternativaPlan('')
@@ -376,8 +242,8 @@ return (
 
       <div className="crear-encabezado-lateral">
         <div className="metricas">
-          <span>{subtareas.length} {subtareas.length === 1 ? 'gestión' : 'gestiones'}</span>
-          <span>{formatDuration(totalTiempo)}</span>
+          <span>{subtareas.length} tareas</span>
+          <span>{totalTiempo} h estimadas</span>
         </div>
       </div>
     </header>
@@ -460,181 +326,17 @@ return (
         <div className="crear-campo">
           <label htmlFor="event_date">Fecha del evento</label>
 
-          <div className="crear-calendar" ref={calendarioRef}>
-            <div className="crear-calendar-control">
-              <input
-                id="event_date"
-                type="datetime-local"
-                step="60"
-                min={`${fechaMinima}T00:00`}
-                value={evento.event_date}
-                onChange={(event) => cambiarFechaHoraManual(event.target.value)}
-              />
-              <button
-                type="button"
-                className="crear-calendar-trigger"
-                aria-label={calendarioAbierto ? 'Cerrar calendario del evento' : 'Abrir calendario del evento'}
-                aria-haspopup="dialog"
-                aria-expanded={calendarioAbierto}
-                aria-controls="event-calendar-panel"
-                onClick={() => {
-                  if (!calendarioAbierto && fechaSeleccionada) {
-                    setMesCalendario(new Date(fechaSeleccionada.getFullYear(), fechaSeleccionada.getMonth(), 1))
-                  }
-                  setCalendarioAbierto((open) => !open)
-                }}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                    <rect x="3.5" y="5" width="17" height="16" rx="2" />
-                    <path d="M7.5 3v4M16.5 3v4M3.5 9.5h17" />
-                  </svg>
-                </button>
-            </div>
-
-            {calendarioAbierto && (
-              <div
-                className="crear-calendar-popover"
-                id="event-calendar-panel"
-                role="dialog"
-                aria-label="Selecciona la fecha y hora del evento"
-              >
-                <section className="crear-calendar-month" aria-label="Calendario">
-                  <header className="crear-calendar-month-header">
-                    <button
-                      type="button"
-                      aria-label="Mes anterior"
-                      disabled={mesCalendario <= mesActual}
-                      onClick={() => cambiarMesCalendario(-1)}
-                    >
-                      ‹
-                    </button>
-                    <h3>{tituloMesCalendario(mesCalendario)}</h3>
-                    <button
-                      type="button"
-                      aria-label="Mes siguiente"
-                      onClick={() => cambiarMesCalendario(1)}
-                    >
-                      ›
-                    </button>
-                  </header>
-                  <div className="crear-calendar-grid">
-                    {[
-                      ['Lu', 'Lunes'],
-                      ['Ma', 'Martes'],
-                      ['Mi', 'Miércoles'],
-                      ['Ju', 'Jueves'],
-                      ['Vi', 'Viernes'],
-                      ['Sá', 'Sábado'],
-                      ['Do', 'Domingo'],
-                    ].map(([shortName, fullName]) => (
-                      <span className="crear-calendar-weekday" key={fullName}>
-                        <span aria-hidden="true">{shortName}</span>
-                        <span className="crear-calendar-sr-only">{fullName}</span>
-                      </span>
-                    ))}
-                    {diasCalendario.map((date) => {
-                      const isoDate = [
-                        date.getFullYear(),
-                        String(date.getMonth() + 1).padStart(2, '0'),
-                        String(date.getDate()).padStart(2, '0'),
-                      ].join('-')
-                      const selectedDate = evento.event_date.slice(0, 10) === isoDate
-                      const isToday = isoDate === fechaMinima
-                      const outsideMonth = date.getMonth() !== mesCalendario.getMonth()
-                      const isPast = isoDate < fechaMinima
-
-                      return (
-                        <button
-                          type="button"
-                          className={[
-                            'crear-calendar-day',
-                            outsideMonth ? 'outside-month' : '',
-                            isToday ? 'is-today' : '',
-                            isPast ? 'is-past' : '',
-                            selectedDate ? 'is-selected' : '',
-                          ].filter(Boolean).join(' ')}
-                          aria-label={new Intl.DateTimeFormat('es-MX', {
-                            weekday: 'long',
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          }).format(date)}
-                          aria-pressed={selectedDate}
-                          disabled={isPast}
-                          key={isoDate}
-                          onClick={() => seleccionarDiaEvento(date)}
-                        >
-                          {date.getDate()}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
-
-                <section className="crear-calendar-time" aria-label="Hora del evento">
-                  <h3>Hora del evento</h3>
-                  <p>Selecciona la hora</p>
-                  <div className="crear-calendar-time-columns">
-                    <div className="crear-calendar-time-column" aria-label="Hora">
-                      <span>Hora</span>
-                      <div>
-                        {Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0')).map((hour) => (
-                          <button
-                            type="button"
-                            className={horaEvento === hour ? 'is-selected' : ''}
-                            aria-pressed={horaEvento === hour}
-                            key={hour}
-                            onClick={() => actualizarHoraEvento('hour', hour)}
-                          >
-                            {hour}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="crear-calendar-time-column" aria-label="Minutos">
-                      <span>Minutos</span>
-                      <div>
-                        {Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, '0')).map((minute) => (
-                          <button
-                            type="button"
-                            className={minutoEvento === minute ? 'is-selected' : ''}
-                            aria-pressed={minutoEvento === minute}
-                            key={minute}
-                            onClick={() => actualizarHoraEvento('minute', minute)}
-                          >
-                            {minute}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="crear-calendar-time-column" aria-label="Periodo">
-                      <span>Periodo</span>
-                      <div>
-                        {['AM', 'PM'].map((period) => (
-                          <button
-                            type="button"
-                            className={periodoEvento === period ? 'is-selected' : ''}
-                            aria-pressed={periodoEvento === period}
-                            key={period}
-                            onClick={() => actualizarHoraEvento('period', period)}
-                          >
-                            {period}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="crear-calendar-done"
-                    onClick={() => setCalendarioAbierto(false)}
-                  >
-                    Listo
-                  </button>
-                </section>
-              </div>
-            )}
-          </div>
+          <input
+            id="event_date"
+            type="datetime-local"
+            value={evento.event_date}
+            onChange={(event) =>
+              setEvento((actual) => ({
+                ...actual,
+                event_date: event.target.value,
+              }))
+            }
+          />
         </div>
 
         <div className="crear-campo crear-campo-color">
@@ -715,22 +417,39 @@ return (
                 Fecha límite
               </label>
 
-              <DatePicker
+              <input
                 id={`fecha-${index}`}
-                ariaLabel="Fecha límite"
+                type="date"
+                max={evento.event_date ? evento.event_date.slice(0, 10) : undefined}
                 value={tarea.target_date}
-                max={evento.event_date.slice(0, 10)}
-                onValueChange={(value) => actualizarSubtarea(index, 'target_date', value)}
+                onChange={(event) =>
+                  actualizarSubtarea(
+                    index,
+                    'target_date',
+                    event.target.value,
+                  )
+                }
               />
             </div>
 
-            <div className="crear-campo crear-campo-duracion">
-              <DurationFields
-                idPrefix={`duration-${index}`}
-                hours={tarea.duration_hours}
-                minutes={tarea.duration_minutes}
-                onHoursChange={(value) => actualizarSubtarea(index, 'duration_hours', value)}
-                onMinutesChange={(value) => actualizarSubtarea(index, 'duration_minutes', value)}
+            <div className="crear-campo">
+              <label htmlFor={`horas-${index}`}>
+                Horas estimadas
+              </label>
+
+              <input
+                id={`horas-${index}`}
+                type="number"
+                min="0.5"
+                step="0.5"
+                value={tarea.estimated_hours}
+                onChange={(event) =>
+                  actualizarSubtarea(
+                    index,
+                    'estimated_hours',
+                    event.target.value,
+                  )
+                }
               />
             </div>
 
@@ -766,7 +485,7 @@ return (
 
         <div className="crear-resumen-acciones">
           <div className="crear-tiempo">
-            <strong>{formatDuration(totalTiempo)}</strong>
+            <strong>{totalTiempo} h</strong>
             <span>tiempo estimado</span>
           </div>
 
@@ -799,7 +518,7 @@ return (
           <p className="reprogram-task-name">{conflictoPlan.subtask_title}</p>
           <div className="reprogram-conflict" role="alert">
             <h2 id="crear-conflicto-title">Conflicto de sobrecarga</h2>
-            <strong>Quedarías con {formatDuration(conflictoPlan.planned_minutes)} planificadas (límite {formatDuration(conflictoPlan.limit_minutes)}).</strong>
+            <strong>Quedarías con {formatMinutesAsHours(conflictoPlan.planned_minutes)} planificadas (límite {formatMinutesAsHours(conflictoPlan.limit_minutes)}).</strong>
           </div>
           <p className="reprogram-question">¿Cómo quieres solucionarlo?</p>
           <div className="reprogram-options">
@@ -807,11 +526,11 @@ return (
               <h3>Mover a otro día</h3>
               <label>
                 Nueva fecha para esta gestión
-                <DatePicker
-                  ariaLabel="Nueva fecha para esta gestión"
+                <input
+                  type="date"
+                  max={evento.event_date ? evento.event_date.slice(0, 10) : undefined}
                   value={fechaAlternativaPlan}
-                  max={evento.event_date.slice(0, 10)}
-                  onValueChange={setFechaAlternativaPlan}
+                  onChange={(event) => setFechaAlternativaPlan(event.target.value)}
                 />
               </label>
               <button
@@ -823,28 +542,21 @@ return (
               </button>
             </section>
             <section>
-              <h3>Reducir duración</h3>
-              <DurationFields
-                idPrefix="reduced-duration"
-                hours={duracionAlternativaPlan.hours}
-                minutes={duracionAlternativaPlan.minutes}
-                onHoursChange={(hours) => setDuracionAlternativaPlan((actual) => ({ ...actual, hours }))}
-                onMinutesChange={(minutes) => setDuracionAlternativaPlan((actual) => ({ ...actual, minutes }))}
-              />
+              <h3>Reducir horas</h3>
+              <label>
+                Duración estimada para esta gestión
+                <input
+                  type="number"
+                  min="0.5"
+                  step="0.5"
+                  value={horasAlternativasPlan}
+                  onChange={(event) => setHorasAlternativasPlan(event.target.value)}
+                />
+              </label>
               <button
                 type="button"
-                onClick={() => resolverConflictoPlan(
-                  'duration',
-                  durationToMinutes(duracionAlternativaPlan.hours, duracionAlternativaPlan.minutes),
-                )}
-                disabled={
-                  !isValidDuration(duracionAlternativaPlan.hours, duracionAlternativaPlan.minutes) ||
-                  durationToMinutes(duracionAlternativaPlan.hours, duracionAlternativaPlan.minutes) >= durationToMinutes(
-                    subtareas[conflictoPlan.taskIndex]?.duration_hours,
-                    subtareas[conflictoPlan.taskIndex]?.duration_minutes,
-                  ) ||
-                  Boolean(cargando)
-                }
+                onClick={() => resolverConflictoPlan('estimated_hours', horasAlternativasPlan)}
+                disabled={Number(horasAlternativasPlan) >= Number(subtareas[conflictoPlan.taskIndex]?.estimated_hours) || Boolean(cargando)}
               >
                 Guardar duración reducida
               </button>

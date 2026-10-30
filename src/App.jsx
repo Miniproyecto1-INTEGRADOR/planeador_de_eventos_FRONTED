@@ -8,7 +8,6 @@ import ProgresoPage from './pages/ProgresoPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegistroPage from './pages/RegistroPage.jsx'
 import ConfiguracionPage from './pages/ConfiguracionPage.jsx'
-import PerfilPage from './pages/PerfilPage.jsx'
 import RestablecerContrasena from './pages/RestablecerContrasena.jsx'
 
 const AUTH_SESSION_VERSION = 'supabase-auth-v1'
@@ -23,7 +22,6 @@ function AppShell({ onLogout, children }) {
   const isEventDetails = location.pathname.startsWith('/evento/')
   const isProgreso = location.pathname === '/progreso'
   const isConfiguracion = location.pathname === '/configuracion'
-  const isPerfil = location.pathname === '/perfil'
 
   return (
     <div className="app-shell">
@@ -35,44 +33,9 @@ function AppShell({ onLogout, children }) {
         )}
         <nav aria-label="Navegación principal">
           <p>Tu espacio</p>
-          <Link className={isHoy ? 'active' : ''} to="/hoy">
-            <svg className="today-nav-icon today-nav-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="3.5" y="5" width="17" height="16" rx="2" />
-              <path d="M7.5 3v4M16.5 3v4M3.5 9.5h17" />
-              <g className="today-nav-calendar-dates">
-                <circle cx="8" cy="13.5" r=".65" />
-                <circle cx="12" cy="13.5" r=".65" />
-                <circle cx="16" cy="13.5" r=".65" />
-                <circle cx="8" cy="17.5" r=".65" />
-                <circle cx="12" cy="17.5" r=".65" />
-                <circle className="today-nav-calendar-date" cx="16" cy="17.5" r="1.25" />
-              </g>
-            </svg>
-            Hoy
-          </Link>
-          <Link className={isProgreso ? 'active' : ''} to="/progreso">
-            <svg className="today-nav-icon today-nav-progress" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M4 3v18h17" />
-              <path className="today-nav-progress-line" pathLength="1" d="m6 16 5-5 4 3 6-8" />
-              <path d="m16 6h5v5" />
-            </svg>
-            Progreso
-          </Link>
-          <Link className={isConfiguracion ? 'active' : ''} to="/configuracion">
-            <svg className="today-nav-icon today-nav-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" />
-              <path className="today-nav-clock-hand today-nav-clock-hour" d="M12 6v6" />
-              <path className="today-nav-clock-hand today-nav-clock-minute" d="m12 12 4 2" />
-            </svg>
-            Límite diario
-          </Link>
-          <Link className={isPerfil ? 'active' : ''} to="/perfil">
-            <svg className="today-nav-icon today-nav-profile" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="11" cy="7" r="3.5" />
-              <path d="M4 21v-2a7 7 0 0 1 14 0v2" />
-            </svg>
-            Mi perfil
-          </Link>
+          <Link className={isHoy ? 'active' : ''} to="/hoy"><img className="today-nav-icon" src="/Hoy.png" alt="" aria-hidden="true" />Hoy</Link>
+          <Link className={isProgreso ? 'active' : ''} to="/progreso"><img className="today-nav-icon" src="/Progreso.png" alt="" aria-hidden="true" />Progreso</Link>
+          <Link className={isConfiguracion ? 'active' : ''} to="/configuracion"><img className="today-nav-icon" src="/Límite%20diario.png" alt="" aria-hidden="true" />Límite diario</Link>
         </nav>
         <button className="today-logout" type="button" onClick={onLogout}>
           <img src="/Cerrar sesión.png" alt="" aria-hidden="true" />
@@ -87,8 +50,8 @@ function AppShell({ onLogout, children }) {
 function AppRoutes({ isAuthenticated, loginNotice, onLogin, onLogout }) {
   const location = useLocation()
 
-  const showStandaloneLogo = !['/login', '/registro', '/restablecer-contrasena'].includes(location.pathname)
-    && !['/hoy', '/crear', '/progreso', '/perfil', '/configuracion'].includes(location.pathname)
+  const showStandaloneLogo = !['/login', '/registro'].includes(location.pathname)
+    && !['/hoy', '/crear', '/progreso', '/configuracion'].includes(location.pathname)
     && !location.pathname.startsWith('/evento/')
 
   return (
@@ -108,7 +71,6 @@ function AppRoutes({ isAuthenticated, loginNotice, onLogin, onLogout }) {
         <Route path="/evento/subtareas" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><DetalleEvento /></AppShell></ProtectedRoute>} />
         <Route path="/evento/:id" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><DetalleEvento /></AppShell></ProtectedRoute>} />
         <Route path="/progreso" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><ProgresoPage /></AppShell></ProtectedRoute>} />
-        <Route path="/perfil" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><PerfilPage /></AppShell></ProtectedRoute>} />
         <Route path="/configuracion" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><ConfiguracionPage /></AppShell></ProtectedRoute>} />
         <Route
   path="/restablecer-contrasena"
