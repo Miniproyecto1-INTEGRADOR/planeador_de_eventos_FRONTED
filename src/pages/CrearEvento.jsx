@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { API_URL } from '../utils/apiUrl.js'
 import { getApiErrorMessage } from '../utils/apiError.js'
-import { formatMinutesAsHours } from '../utils/formatters.js'
+import { formatMinutesAsHoursAndMinutes } from '../utils/formatters.js'
 
 const valoresIniciales = {
   name: '',
@@ -13,8 +13,23 @@ const valoresIniciales = {
 }
 
 const subtareaBase = [
-  { title: '', target_date: '', estimated_hours: '' },
+  { title: '', target_date: '', estimated_hours: '', estimated_minutes: '' },
 ]
+
+const getDurationMinutes = (task) => (
+  Number(task.estimated_hours || 0) * 60 + Number(task.estimated_minutes || 0)
+)
+
+const isValidDuration = (task) => {
+  const hours = Number(task.estimated_hours || 0)
+  const minutes = Number(task.estimated_minutes || 0)
+  return Number.isInteger(hours)
+    && hours >= 0
+    && Number.isInteger(minutes)
+    && minutes >= 0
+    && minutes < 60
+    && hours * 60 + minutes > 0
+}
 
 const tiposEvento = [
   'Bodas',
@@ -46,7 +61,7 @@ export default function CrearEvento() {
   const [error, setError] = useState('')
   const [conflictoPlan, setConflictoPlan] = useState(null)
   const [fechaAlternativaPlan, setFechaAlternativaPlan] = useState('')
-  const [horasAlternativasPlan, setHorasAlternativasPlan] = useState('')
+  const [minutosAlternativosPlan, setMinutosAlternativosPlan] = useState('')
   const [tiposAbierto, setTiposAbierto] = useState(false)
   const tiposRef = useRef(null)
 
@@ -54,7 +69,9 @@ export default function CrearEvento() {
     evento.name.trim() ||
     evento.event_date ||
     evento.color !== valoresIniciales.color ||
-    subtareas.some((tarea) => tarea.title.trim() || tarea.target_date || tarea.estimated_hours),
+    subtareas.some((tarea) => (
+      tarea.title.trim() || tarea.target_date || tarea.estimated_hours || tarea.estimated_minutes
+    )),
   )
 
   useEffect(() => {
@@ -85,7 +102,7 @@ export default function CrearEvento() {
   }
 
   const totalTiempo = useMemo(
-    () => subtareas.reduce((total, item) => total + Number(item.estimated_hours || 0), 0),
+    () => subtareas.reduce((total, item) => total + getDurationMinutes(item), 0),
     [subtareas],
   )
 
@@ -95,7 +112,7 @@ export default function CrearEvento() {
         pos === index
           ? {
               ...tarea,
-              [campo]: campo === 'estimated_hours' ? (valor === '' ? '' : Number(valor)) : valor,
+              [campo]: valor,
             }
           : tarea,
       ),
@@ -103,7 +120,12 @@ export default function CrearEvento() {
   }
 
   const agregarSubtarea = () => {
-    setSubtareas((actuales) => [...actuales, { title: '', target_date: '', estimated_hours: '' }])
+    setSubtareas((actuales) => [...actuales, {
+      title: '',
+      target_date: '',
+      estimated_hours: '',
+      estimated_minutes: '',
+    }])
   }
 
   const eliminarSubtarea = (index) => {
@@ -130,10 +152,12 @@ export default function CrearEvento() {
     const fechaEvento = evento.event_date.slice(0, 10)
 
     const subtareasConContenido = subtareasPlan.filter(
-      (item) => item.title.trim() || item.target_date || item.estimated_hours,
+      (item) => (
+        item.title.trim() || item.target_date || item.estimated_hours || item.estimated_minutes
+      ),
     )
     const subtareasValidas = subtareasConContenido.filter(
-      (item) => item.title.trim() && Number(item.estimated_hours) > 0,
+      (item) => item.title.trim() && isValidDuration(item),
     )
 
     if (!subtareasConContenido.length) {
@@ -142,14 +166,14 @@ export default function CrearEvento() {
     }
     if (subtareasValidas.length !== subtareasConContenido.length) {
       const faltaTitulo = subtareasConContenido.some((item) => !item.title.trim())
-      const faltaHorasValidas = subtareasConContenido.some((item) => Number(item.estimated_hours) <= 0)
+      const faltaDuracionValida = subtareasConContenido.some((item) => !isValidDuration(item))
 
-      if (faltaTitulo && faltaHorasValidas) {
-        setError('Completa el título y asigna un número de horas mayor a 0 en cada gestión que hayas comenzado.')
+      if (faltaTitulo && faltaDuracionValida) {
+        setError('Completa el título y asigna una duración válida mayor a cero; los minutos deben estar entre 0 y 59.')
       } else if (faltaTitulo) {
         setError('Completa el título de cada gestión que hayas comenzado.')
       } else {
-        setError('Asigna un número de horas mayor a 0 en cada gestión que hayas comenzado.')
+        setError('Asigna una duración válida mayor a cero; los minutos deben estar entre 0 y 59.')
       }
       return
     }
@@ -171,7 +195,7 @@ export default function CrearEvento() {
           title: tarea.title.trim(),
           description: `Gestión logística para ${evento.name.trim()}`,
           target_date: tarea.target_date || evento.event_date.split('T')[0],
-          estimated_minutes: Number(tarea.estimated_hours) * 60,
+          estimated_minutes: getDurationMinutes(tarea),
           status: 'pending',
         })),
       }
@@ -194,7 +218,7 @@ export default function CrearEvento() {
         const conflictingTask = subtareasValidas[Number(detail.subtask_index)]
         const taskIndex = conflictingTask ? subtareasPlan.indexOf(conflictingTask) : -1
         setFechaAlternativaPlan('')
-        setHorasAlternativasPlan(String(Math.max(0.5, Number(conflictingTask?.estimated_hours || 1) - 0.5)))
+        setMinutosAlternativosPlan(String(Math.max(1, getDurationMinutes(conflictingTask || {}) - 30)))
         setConflictoPlan({ ...detail, taskIndex })
       } else {
         const mensajeError = getApiErrorMessage(
@@ -215,13 +239,15 @@ export default function CrearEvento() {
       return
     }
 
-    const subtareasActualizadas = subtareas.map((tarea, index) => index === conflictoPlan.taskIndex
-      ? {
-          ...tarea,
-          [field]: field === 'estimated_hours' ? Number(value) : value,
+    const updatedValues = field === 'target_date'
+      ? { target_date: value }
+      : {
+          estimated_hours: String(Math.floor(Number(value) / 60)),
+          estimated_minutes: String(Number(value) % 60),
         }
-      : tarea,
-    )
+    const subtareasActualizadas = subtareas.map((tarea, index) => (
+      index === conflictoPlan.taskIndex ? { ...tarea, ...updatedValues } : tarea
+    ))
     setSubtareas(subtareasActualizadas)
     setConflictoPlan(null)
     setFechaAlternativaPlan('')
@@ -243,7 +269,7 @@ return (
       <div className="crear-encabezado-lateral">
         <div className="metricas">
           <span>{subtareas.length} tareas</span>
-          <span>{totalTiempo} h estimadas</span>
+          <span>{formatMinutesAsHoursAndMinutes(totalTiempo)} estimadas</span>
         </div>
       </div>
     </header>
@@ -434,19 +460,41 @@ return (
 
             <div className="crear-campo">
               <label htmlFor={`horas-${index}`}>
-                Horas estimadas
+                Horas
               </label>
 
               <input
                 id={`horas-${index}`}
                 type="number"
-                min="0.5"
-                step="0.5"
+                min="0"
+                step="1"
                 value={tarea.estimated_hours}
                 onChange={(event) =>
                   actualizarSubtarea(
                     index,
                     'estimated_hours',
+                    event.target.value,
+                  )
+                }
+              />
+            </div>
+
+            <div className="crear-campo">
+              <label htmlFor={`minutos-${index}`}>
+                Minutos
+              </label>
+
+              <input
+                id={`minutos-${index}`}
+                type="number"
+                min="0"
+                max="59"
+                step="1"
+                value={tarea.estimated_minutes}
+                onChange={(event) =>
+                  actualizarSubtarea(
+                    index,
+                    'estimated_minutes',
                     event.target.value,
                   )
                 }
@@ -485,7 +533,7 @@ return (
 
         <div className="crear-resumen-acciones">
           <div className="crear-tiempo">
-            <strong>{totalTiempo} h</strong>
+            <strong>{formatMinutesAsHoursAndMinutes(totalTiempo)}</strong>
             <span>tiempo estimado</span>
           </div>
 
@@ -542,21 +590,26 @@ return (
               </button>
             </section>
             <section>
-              <h3>Reducir horas</h3>
+              <h3>Reducir duración</h3>
               <label>
-                Duración estimada para esta gestión
+                Nueva duración (minutos)
                 <input
                   type="number"
-                  min="0.5"
-                  step="0.5"
-                  value={horasAlternativasPlan}
-                  onChange={(event) => setHorasAlternativasPlan(event.target.value)}
+                  min="1"
+                  step="1"
+                  value={minutosAlternativosPlan}
+                  onChange={(event) => setMinutosAlternativosPlan(event.target.value)}
                 />
               </label>
               <button
                 type="button"
-                onClick={() => resolverConflictoPlan('estimated_hours', horasAlternativasPlan)}
-                disabled={Number(horasAlternativasPlan) >= Number(subtareas[conflictoPlan.taskIndex]?.estimated_hours) || Boolean(cargando)}
+                onClick={() => resolverConflictoPlan('estimated_minutes', minutosAlternativosPlan)}
+                disabled={
+                  !Number.isInteger(Number(minutosAlternativosPlan))
+                  || Number(minutosAlternativosPlan) < 1
+                  || Number(minutosAlternativosPlan) >= getDurationMinutes(subtareas[conflictoPlan.taskIndex] || {})
+                  || Boolean(cargando)
+                }
               >
                 Guardar duración reducida
               </button>

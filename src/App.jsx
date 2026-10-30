@@ -8,6 +8,7 @@ import ProgresoPage from './pages/ProgresoPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegistroPage from './pages/RegistroPage.jsx'
 import ConfiguracionPage from './pages/ConfiguracionPage.jsx'
+import PerfilPage from './pages/PerfilPage.jsx'
 import RestablecerContrasena from './pages/RestablecerContrasena.jsx'
 
 const AUTH_SESSION_VERSION = 'supabase-auth-v1'
@@ -22,6 +23,7 @@ function AppShell({ onLogout, children }) {
   const isEventDetails = location.pathname.startsWith('/evento/')
   const isProgreso = location.pathname === '/progreso'
   const isConfiguracion = location.pathname === '/configuracion'
+  const isPerfil = location.pathname === '/perfil'
 
   return (
     <div className="app-shell">
@@ -36,6 +38,7 @@ function AppShell({ onLogout, children }) {
           <Link className={isHoy ? 'active' : ''} to="/hoy"><img className="today-nav-icon" src="/Hoy.png" alt="" aria-hidden="true" />Hoy</Link>
           <Link className={isProgreso ? 'active' : ''} to="/progreso"><img className="today-nav-icon" src="/Progreso.png" alt="" aria-hidden="true" />Progreso</Link>
           <Link className={isConfiguracion ? 'active' : ''} to="/configuracion"><img className="today-nav-icon" src="/Límite%20diario.png" alt="" aria-hidden="true" />Límite diario</Link>
+          <Link className={isPerfil ? 'active' : ''} to="/perfil">Mi perfil</Link>
         </nav>
         <button className="today-logout" type="button" onClick={onLogout}>
           <img src="/Cerrar sesión.png" alt="" aria-hidden="true" />
@@ -51,7 +54,7 @@ function AppRoutes({ isAuthenticated, loginNotice, onLogin, onLogout }) {
   const location = useLocation()
 
   const showStandaloneLogo = !['/login', '/registro'].includes(location.pathname)
-    && !['/hoy', '/crear', '/progreso', '/configuracion'].includes(location.pathname)
+    && !['/hoy', '/crear', '/progreso', '/configuracion', '/perfil'].includes(location.pathname)
     && !location.pathname.startsWith('/evento/')
 
   return (
@@ -72,6 +75,7 @@ function AppRoutes({ isAuthenticated, loginNotice, onLogin, onLogout }) {
         <Route path="/evento/:id" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><DetalleEvento /></AppShell></ProtectedRoute>} />
         <Route path="/progreso" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><ProgresoPage /></AppShell></ProtectedRoute>} />
         <Route path="/configuracion" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><ConfiguracionPage /></AppShell></ProtectedRoute>} />
+        <Route path="/perfil" element={<ProtectedRoute isAuthenticated={isAuthenticated}><AppShell onLogout={onLogout}><PerfilPage /></AppShell></ProtectedRoute>} />
         <Route
   path="/restablecer-contrasena"
   element={<RestablecerContrasena />}

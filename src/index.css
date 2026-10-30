@@ -8,6 +8,11 @@
   margin-bottom: 1.5rem;
 }
 
+.crear-panel > .encabezado h2 {
+  font-size: 1.8rem;
+  line-height: 1.15;
+}
+
 .crear-panel .encabezado .subtitulo {
   max-width: 620px;
 }
@@ -204,7 +209,7 @@
 
 .crear-subtarea {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(150px, .8fr) 130px auto;
+  grid-template-columns: minmax(0, 1.6fr) minmax(150px, .8fr) minmax(90px, .45fr) minmax(90px, .45fr) auto;
   gap: .8rem;
   align-items: end;
   padding: .9rem;
@@ -1854,6 +1859,27 @@
   border: 1px solid #dfe8e3;
   border-radius: 8px;
   background: #fff;
+}
+
+.profile-card {
+  max-width: 540px;
+  margin-top: 1.5rem;
+  padding: 1.2rem;
+  border: 1px solid #dfe8e3;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.profile-card h3 {
+  margin: 0 0 .45rem;
+  color: #25384b;
+  font-size: .9rem;
+}
+
+.profile-card p {
+  margin: 0;
+  color: #176b56;
+  overflow-wrap: anywhere;
 }
 
 .settings-limit-form label {
