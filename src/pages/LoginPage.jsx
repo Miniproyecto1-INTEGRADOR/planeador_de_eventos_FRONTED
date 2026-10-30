@@ -141,6 +141,7 @@ export default function LoginPage({ onLogin, sessionNotice = '' }) {
           {recovering ? (
             <form
               onSubmit={handleRecovery}
+              className="recovery-form"
               style={{ display: 'grid', gap: '1rem' }}
             >
               <label>

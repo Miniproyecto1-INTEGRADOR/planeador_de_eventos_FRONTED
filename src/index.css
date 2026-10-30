@@ -650,6 +650,14 @@
   font-weight: 600;
 }
 
+.login-auth-panel .recovery-form .auth-button {
+  width: 85%;
+  min-height: 42px;
+  justify-self: center;
+  padding: .5rem .75rem;
+  font-size: .9rem;
+}
+
 .login-register-prompt {
   margin: 1.4rem 0 0;
   color: #647078;
