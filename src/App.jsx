@@ -38,7 +38,13 @@ function AppShell({ onLogout, children }) {
           <Link className={isHoy ? 'active' : ''} to="/hoy"><img className="today-nav-icon" src="/Hoy.png" alt="" aria-hidden="true" />Hoy</Link>
           <Link className={isProgreso ? 'active' : ''} to="/progreso"><img className="today-nav-icon" src="/Progreso.png" alt="" aria-hidden="true" />Progreso</Link>
           <Link className={isConfiguracion ? 'active' : ''} to="/configuracion"><img className="today-nav-icon" src="/Límite%20diario.png" alt="" aria-hidden="true" />Límite diario</Link>
-          <Link className={isPerfil ? 'active' : ''} to="/perfil">Mi perfil</Link>
+          <Link className={isPerfil ? 'active' : ''} to="/perfil">
+            <svg className="today-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+              <circle cx="12" cy="8" r="3.2" />
+              <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
+            </svg>
+            Mi perfil
+          </Link>
         </nav>
         <button className="today-logout" type="button" onClick={onLogout}>
           <img src="/Cerrar sesión.png" alt="" aria-hidden="true" />

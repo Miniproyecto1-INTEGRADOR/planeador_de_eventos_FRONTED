@@ -1864,21 +1864,28 @@
 .profile-card {
   max-width: 540px;
   margin-top: 1.5rem;
-  padding: 1.2rem;
+  padding: .8rem 1rem;
   border: 1px solid #dfe8e3;
   border-radius: 8px;
   background: #fff;
 }
 
 .profile-card h3 {
-  margin: 0 0 .45rem;
-  color: #25384b;
-  font-size: .9rem;
+  margin: 0 0 .3rem;
+  color: #71808b;
+  font-size: .78rem;
+}
+
+.profile-card-field + .profile-card-field {
+  margin-top: .65rem;
+  padding-top: .65rem;
+  border-top: 1px solid #eef0ef;
 }
 
 .profile-card p {
   margin: 0;
-  color: #176b56;
+  color: #25384b;
+  font-size: .88rem;
   overflow-wrap: anywhere;
 }
 

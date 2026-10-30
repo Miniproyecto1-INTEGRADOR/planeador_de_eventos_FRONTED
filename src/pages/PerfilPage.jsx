@@ -4,7 +4,7 @@ import { API_URL } from '../utils/apiUrl.js'
 import { getApiErrorMessage } from '../utils/apiError.js'
 
 export default function PerfilPage() {
-  const [email, setEmail] = useState('')
+  const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('authToken')))
   const [error, setError] = useState(() => (
     localStorage.getItem('authToken') ? '' : 'No encontramos tu sesión. Inicia sesión de nuevo.'
@@ -20,7 +20,7 @@ export default function PerfilPage() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(({ data }) => {
-        if (active) setEmail(data.email)
+        if (active) setProfile(data)
       })
       .catch((requestError) => {
         if (active) setError(getApiErrorMessage(requestError, 'No pudimos cargar tu perfil.'))
@@ -40,9 +40,19 @@ export default function PerfilPage() {
       {loading && <p role="status">Cargando perfil…</p>}
       {error && <div className="state-message state-error" role="alert">{error}</div>}
       {!loading && !error && (
-        <section className="profile-card" aria-labelledby="profile-email-label">
-          <h3 id="profile-email-label">Correo electrónico</h3>
-          <p>{email}</p>
+        <section className="profile-card" aria-label="Información del perfil">
+          <div className="profile-card-field">
+            <h3>Nombre</h3>
+            <p>{profile.first_name || 'No registrado'}</p>
+          </div>
+          <div className="profile-card-field">
+            <h3>Apellido</h3>
+            <p>{profile.last_name || 'No registrado'}</p>
+          </div>
+          <div className="profile-card-field">
+            <h3>Correo electrónico</h3>
+            <p>{profile.email}</p>
+          </div>
         </section>
       )}
     </main>
